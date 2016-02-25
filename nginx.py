@@ -16,26 +16,6 @@ import sys
 def main():
     """The main program"""
 
-    with open('/tmp/graphite.service.nginx.lock', 'w') as file_descriptor:
-        #
-        # Exclusive file lock
-        #
-        # File system locks on UNIX-like systems are advisory, so this lock isn't
-        # going to stop anyone from doing anything to this file.  We are locking
-        # only for ourself, not for other applications.  It will avoid multiple
-        # processes of this script as the second process will die at this point
-        # with IOError.
-        #
-        # Note that we are not going to release the lock.  It will go away with
-        # the file descriptor.
-        #
-        fcntl.lockf(file_descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-
-        print_stats()
-
-def print_stats():
-    """Print the statistics for Graphite"""
-
     hostname = socket.gethostname().replace('.', '_')
     prefix = "servers."+ hostname +".software.nginx."
     stub_status = {}
@@ -61,7 +41,5 @@ def print_stats():
     for key, value in stub_status.items():
         print(template.format(key, value, now))
 
-
 if __name__ == "__main__":
     main()
-
