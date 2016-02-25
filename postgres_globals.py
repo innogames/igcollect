@@ -166,7 +166,12 @@ query = """SELECT datname, state, count(*) as count
 now = str(int(time.time()))
 
 for line in connect_and_execute(query):
-    print(template.format(line['datname'], line['state'], line['count'], now))
+    print(template.format(
+        line['datname'],
+        line['state'].replace(' ', '_'),
+        line['count'],
+        now,
+    ))
 
 #
 # Lock counts by database and lock mode
