@@ -7,7 +7,7 @@
 
 import time
 
-from lib.postgres import get_prefix, get_user_databases, connect_and_execute
+from libigcollect.postgres import get_prefix, get_user_databases, connect_and_execute
 
 prefix = get_prefix()
 user_databases = get_user_databases()
