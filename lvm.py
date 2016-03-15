@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# igcollect - Artfiles hosting
+# igcollect - Linux volume manager
 #
 # Copyright (c) 2016, InnoGames GmbH
 #
