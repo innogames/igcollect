@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#
+# igcollect - Linux disk I/O
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 from __future__ import print_function
 import socket, time, sys

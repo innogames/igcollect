@@ -1,8 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
-# Graphite PostgreSQL Service Data Collector
+# igcollect - Linux load average
 #
-# Copyright (c) 2015, InnoGames GmbH
+# Copyright (c) 2016, InnoGames GmbH
 #
 
 from __future__ import print_function

@@ -1,4 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+#
+# igcollect - Linux NUMA CPUs
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
+
 import itertools
 try:
     import libvirt

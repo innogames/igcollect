@@ -1,8 +1,12 @@
 #!/usr/bin/env python
+#
+# igcollect - Linux CPU usage
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 from __future__ import print_function
 import socket, time, sys
-
 
 def get_cpustats_dict(header):
     ''' returns a dictionary made from /proc/diskstats '''

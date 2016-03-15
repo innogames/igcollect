@@ -1,10 +1,13 @@
 #!/usr/bin/env python
+#
+# igcollect - Xen VM disks
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 from __future__ import print_function
 import socket, time, subprocess, os
 import re
-
-
 
 def get_vbds():
     p = subprocess.Popen(['/usr/sbin/xenstore-ls', '-f'], stdout=subprocess.PIPE)

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
-# Graphite PostgreSQL Service Data Collector
+# igcollect - PostgreSQL globals
 #
-# Copyright (c) 2015, InnoGames GmbH
+# Copyright (c) 2016, InnoGames GmbH
 #
 
 import time

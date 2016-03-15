@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #
-# Graphite CPU Performance Factor Reporter
+# igcollect - Linux CPU performance factors
 #
-# Copyright (c) 2015, InnoGames GmbH
+# Copyright (c) 2016, InnoGames GmbH
 #
+
 from __future__ import print_function
 import socket, time, sys
 

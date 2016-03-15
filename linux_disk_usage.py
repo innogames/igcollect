@@ -1,4 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+#
+# igcollect - Linux disk usage
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 from __future__ import print_function
 import socket, time, os, sys

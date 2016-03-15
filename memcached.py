@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
-# Graphite Beanstalkd Service Data Collector
+# igcollect - Memcached
 #
-# Copyright (c) 2015, InnoGames GmbH
+# Copyright (c) 2016, InnoGames GmbH
 #
 
 import re, telnetlib, sys, socket, time

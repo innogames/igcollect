@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#
+# igcollect - Artfiles hosting
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 from __future__ import print_function
 from __future__ import division

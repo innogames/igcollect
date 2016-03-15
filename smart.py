@@ -1,4 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+#
+# igcollect - S.M.A.R.T.
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
+
 from __future__ import print_function
 from socket import gethostname
 import glob, time, sys

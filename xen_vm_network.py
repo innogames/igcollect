@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Graphite Xen Data Collector
+# igcollect - XEN VM network
 #
 # Copyright (c) 2015, InnoGames GmbH
 

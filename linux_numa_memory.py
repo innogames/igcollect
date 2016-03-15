@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+#
+# igcollect - Linux NUMA memory
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 import time, sys
 from socket import gethostname

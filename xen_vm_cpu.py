@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#
+# igcollect - Xen VM CPUs
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 from __future__ import print_function
 import socket, time

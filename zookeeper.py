@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#
+# igcollect - Zookeeper
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 import time
 import socket

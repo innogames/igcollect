@@ -1,4 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+#
+# igcollect - KVM stats
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 import time
 import socket

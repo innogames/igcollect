@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#
+# igcollect - Linux network
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 from __future__ import print_function
 import socket, time, sys

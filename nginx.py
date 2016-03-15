@@ -1,9 +1,8 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 #
-# Graphite NGINX Data Collector
+# igcollect - Nginx
 #
-# Copyright (c) 2015, InnoGames GmbH
-# Author: Bernhard Schrader
+# Copyright (c) 2016, InnoGames GmbH
 #
 
 from __future__ import print_function
