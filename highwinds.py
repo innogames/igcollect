@@ -89,7 +89,10 @@ def main():
     # if you more recent data, you need to specify start and end time
     # using the -f and -t parameter
     now=time.time()
-    endtime = now - 900;
+    if args.end_time: 
+        endtime = args.end_time
+    else:    
+        endtime = now - 900;
 
     # select reasonable default intervals for the query,
     # for a minutely interval we return an hours worth of data
@@ -100,8 +103,7 @@ def main():
     elif  interval == 'PT1H':   starttime = endtime - 86400
     elif  interval == 'P1D':    starttime = endtime - 2680201
 
-    # use the provided start and end if present
-    if args.end_time: endtime = args.end_time
+    # use the provided start if present
     if args.start_time: starttime = args.start_time
 
     for service in all_services:
