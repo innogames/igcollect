@@ -48,8 +48,12 @@ def get_cpustats_dict(header):
                 cpustats_dict[name][i] = x.pop(0)
         elif line.startswith('btime '):
             uptime = int(time.time()) - int(line.split(' ',1)[1])
+        elif line.startswith('intr '):
+            interrupts = int(line.split(' ',2)[1])
+        elif line.startswith('ctxt '):
+            context_switches = int(line.split(' ',1)[1])
 
-    return(cpustats_dict, total_dict, uptime, count)
+    return(cpustats_dict, total_dict, uptime, count, interrupts, context_switches)
 
 
 now = str(int(time.time()))
@@ -58,7 +62,7 @@ hostname = socket.gethostname().replace('.','_')
 sector_size=512
 
 header=['user','nice','system','idle','iowait','irq','softirq','steal']
-cs, totals, uptime, count = get_cpustats_dict(header)
+cs, totals, uptime, count, intr, ctxt = get_cpustats_dict(header)
 
 for cpu in cs:
     for metric in header:
@@ -69,5 +73,7 @@ for value in totals:
 
 graphite_data += 'servers.%s.system.cpu.count %s %s\n' % (hostname, str(count), now )
 graphite_data += 'servers.%s.system.cpu.uptime %s %s\n' % (hostname, str(uptime), now )
+graphite_data += 'servers.%s.system.cpu.intr %s %s\n' % (hostname, str(intr,), now )
+graphite_data += 'servers.%s.system.cpu.ctxt %s %s\n' % (hostname, str(ctxt), now )
 
 print(graphite_data)
