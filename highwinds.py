@@ -92,7 +92,7 @@ def main():
     if args.end_time: 
         endtime = args.end_time
     else:    
-        endtime = now - 900;
+        endtime = now - 1800;
 
     # select reasonable default intervals for the query,
     # for a minutely interval we return an hours worth of data
