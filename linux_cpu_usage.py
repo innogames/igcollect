@@ -12,7 +12,7 @@ def get_cpustats_dict(header):
     ''' returns a dictionary made from /proc/diskstats '''
     try:
         sd = open('/proc/stat','r')
-        stat_data = sd.readlines(1024)
+        stat_data = sd.readlines(16384)
         sd.close()
     except:
         sys.exit(1)
