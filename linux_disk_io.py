@@ -59,5 +59,6 @@ for disk in dd:
         graphite_data += 'servers.%s.system.disk.%s.ioTimeMsRead %s %s\n' % (hostname, disk, str(dd[disk]['ms_read']), now )
         graphite_data += 'servers.%s.system.disk.%s.ioTimeMsWrite %s %s\n' % (hostname, disk, str(dd[disk]['ms_written']), now )
         graphite_data += 'servers.%s.system.disk.%s.ioTimeMs %s %s\n' % (hostname, disk, str(dd[disk]['ms_io']), now )
+        graphite_data += 'servers.%s.system.disk.%s.ioOpsInProgress %s %s\n' % (hostname, disk, str(dd[disk]['cur_iops']), now )
 
 print(graphite_data)
