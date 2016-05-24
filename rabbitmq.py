@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#
+# igcollect - PostgreSQL objects
+#
+# Copyright (c) 2016, InnoGames GmbH
+#
 
 from __future__ import print_function
 import json
