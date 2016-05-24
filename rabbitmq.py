@@ -38,4 +38,4 @@ for metric in overview_metrics:
 data = download(rabbit_url + '/nodes/' + nodename)
 
 for metric in nodes_metrics:
-        print(graphite_prefix + '.' + metric + ' ' + str(data[metric]) + ' ' + str(now))
+    print(graphite_prefix + '.' + metric + ' ' + str(data[metric]) + ' ' + str(now))
