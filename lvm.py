@@ -13,7 +13,7 @@ import time, sys
 import subprocess
 
 try:
-    vgdisplay = subprocess.Popen(['vgdisplay -c'], stdout=subprocess.PIPE, shell=True, stdin=subprocess.PIPE,close_fds=True ).stdout.readlines()
+    vgdisplay = subprocess.Popen(['/sbin/vgdisplay -c'], stdout=subprocess.PIPE, shell=True, stdin=subprocess.PIPE,close_fds=True ).stdout.readlines()
 except:
     sys.exit(1)
 
