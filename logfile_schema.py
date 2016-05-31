@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # logfile_hits.py
 #
@@ -26,14 +26,25 @@ import hashlib
 import argparse
 import datetime
 
+from os.path import isfile, expanduser
 
 def main():
     """Parse logfile and return result"""
     args = parse_args()
+
     errors = dict()
     errors_total = 0
     errors_unique = 0
     timeshift = get_datetime_timeshift(args.timeshift)
+
+    if not isfile(expanduser(args.file)):
+        if args.verbose:
+            print('file does not exists')
+        if args.unique:
+            print(0)
+        if args.total:
+            print(0)
+        return
 
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
