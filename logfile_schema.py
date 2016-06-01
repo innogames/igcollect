@@ -27,6 +27,8 @@ import argparse
 import datetime
 
 from os.path import isfile, expanduser
+from platform import node
+from time import time
 
 def main():
     """Parse logfile and return result"""
@@ -99,10 +101,15 @@ def main():
         print('{0} errors total'.format(errors_total))
         print('timeshift {0}'.format(timeshift))
     else:
+        timestamp = str(int(time()))
+        hostname = node().replace('.', '_').lower()
+        filename = args.file.replace('.', '_').lower().rsplit('/').pop()
+        metric_path = 'servers.{0}.logs.{1}'.format(hostname, filename)
+
         if args.total:
-            print(errors_total)
+            print('{0} {1} {2}'.format(metric_path, errors_total, timestamp))
         if args.unique:
-            print(errors_unique)
+            print('{0} {1} {2}'.format(metric_path, errors_unique, timestamp))
 
 
 def parse_args():
@@ -135,7 +142,7 @@ def get_datetime_timeshift(timeshift):
     """Parse timehift into datetime -> datetime"""
     value = int(timeshift[:-1])
     unit = timeshift[-1].lower()
-    now = datetime.datetime.fromtimestamp(time.time())
+    now = datetime.datetime.fromtimestamp(time())
 
     if unit == 's':
         return now - datetime.timedelta(seconds=value)
