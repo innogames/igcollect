@@ -25,14 +25,19 @@ import hashlib
 import argparse
 import datetime
 
+from os import environ
 from os.path import isfile, expanduser
 from platform import node
-from time import time
+from time import time, tzset
 
 
 def main():
     """Parse logfile and return result"""
     args = parse_args()
+
+    if args.timezone:
+        environ['TZ'] = args.timezone
+        tzset()
 
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -122,6 +127,8 @@ def parse_args():
                         help='e.g. %%y-%%m-%%d %%H:%%M:%%S')
     parser.add_argument('message_regex',
                         help='e.g. ([ERROR].*)')
+    parser.add_argument('--timezone', '-z',
+                        help='overwrite system timezone e.g. Europe/Berlin')
     parser.add_argument('--unique', '-u', action='store_true',
                         help='print number of unique events matching.')
     parser.add_argument('--total', '-t', action='store_true',
