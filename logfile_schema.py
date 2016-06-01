@@ -20,7 +20,6 @@ logfile_schema.py myfile.log 15m "([0-9]{2}-?){3} ([0-9]{2}:?){3}"
 """
 
 import re
-import time
 import logging
 import hashlib
 import argparse
@@ -30,67 +29,64 @@ from os.path import isfile, expanduser
 from platform import node
 from time import time
 
+
 def main():
     """Parse logfile and return result"""
     args = parse_args()
 
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    logging.getLogger().addHandler(logging.StreamHandler())
     errors = dict()
     errors_total = 0
     errors_unique = 0
     timeshift = get_datetime_timeshift(args.timeshift)
 
-    if not isfile(expanduser(args.file)):
-        if args.verbose:
-            print('file does not exists')
-        if args.unique:
-            print(0)
-        if args.total:
-            print(0)
-        return
-
-    if args.debug:
-        logging.getLogger().setLevel(logging.DEBUG)
-    logging.getLogger().addHandler(logging.StreamHandler())
-
     logging.getLogger().debug('matchings logs since %s', timeshift)
-    with open(args.file, mode='r') as f:
 
-        # @TODO maybe it is possible to read file backwards and stop if
-        # timeshift is exceeded so that we do not have to parse the complete
-        # file every run.
-        for line in f:
-            logging.getLogger().debug('parsing line %s', line)
-            time_string, message_string = get_datetime_and_message(
-                line,
-                args.time_regex,
-                args.time_format,
-                args.message_regex
-            )
+    if isfile(expanduser(args.file)):
+        with open(args.file, mode='r') as f:
 
-            if (time_string and message_string) and (time_string >= timeshift):
-                    logging.getLogger().debug(
-                        'message is in time range: evaluating'
-                    )
-                    message_hash = hashlib.md5(
-                        message_string.encode('utf-8')
-                    ).hexdigest()
-                    logging.getLogger().debug(
-                        'hash for message is %s',
-                        message_hash
-                    )
+            # @TODO maybe it is possible to read file backwards and stop if
+            # timeshift is exceeded so that we do not have to parse the
+            # complete file every run.
+            for line in f:
+                logging.getLogger().debug('parsing line %s', line)
+                time_string, message_string = get_datetime_and_message(
+                    line,
+                    args.time_regex,
+                    args.time_format,
+                    args.message_regex
+                )
 
-                    if message_hash not in errors:
+                if (
+                    (time_string and message_string) and
+                    (time_string >= timeshift)
+                ):
                         logging.getLogger().debug(
-                            'new message %s',
+                            'message is in time range: evaluating'
+                        )
+                        message_hash = hashlib.md5(
+                            message_string.encode('utf-8')
+                        ).hexdigest()
+                        logging.getLogger().debug(
+                            'hash for message is %s',
                             message_hash
                         )
-                        errors[message_hash] = 1
-                    else:
-                        logging.getLogger().debug(
-                            'found message %s',
-                            message_hash
-                        )
-                        errors[message_hash] += 1
+
+                        if message_hash not in errors:
+                            logging.getLogger().debug(
+                                'new message %s',
+                                message_hash
+                            )
+                            errors[message_hash] = 1
+                        else:
+                            logging.getLogger().debug(
+                                'found message %s',
+                                message_hash
+                            )
+                            errors[message_hash] += 1
 
     errors_unique = len(errors)
     for matches in errors.values():
