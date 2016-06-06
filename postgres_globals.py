@@ -83,7 +83,8 @@ for database in user_databases:
 
     for line in connect_and_execute(query, database):
         for key, value in line.items():
-            print(template.format(key, value, now))
+            if value is not None:
+                print(template.format(key, value, now))
 
 #
 # IO statistics by database system tables
@@ -103,7 +104,8 @@ for database in user_databases:
 
     for line in connect_and_execute(query, database):
         for key, value in line.items():
-            print(template.format(key, value, now))
+            if value is not None:
+                print(template.format(key, value, now))
 
 #
 # IO statistics by database user tables
@@ -123,7 +125,8 @@ for database in user_databases:
 
     for line in connect_and_execute(query, database):
         for key, value in line.items():
-            print(template.format(key, value, now))
+            if value is not None:
+                print(template.format(key, value, now))
 
 #
 # Tablespaces
