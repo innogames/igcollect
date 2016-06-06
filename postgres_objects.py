@@ -7,7 +7,11 @@
 
 import time
 
-from libigcollect.postgres import get_prefix, get_user_databases, connect_and_execute
+from libigcollect.postgres import (
+    get_prefix,
+    get_user_databases,
+    connect_and_execute,
+)
 
 prefix = get_prefix()
 user_databases = get_user_databases()
@@ -30,7 +34,7 @@ for database in user_databases:
         relname = line.pop("relname")
 
         for key, value in line.items():
-            if value != None:
+            if value is not None:
                 print(template.format(nspname, relname, key, value, now))
 
 #
@@ -67,7 +71,7 @@ for database in user_databases:
         relname = line.pop("relname")
 
         for key, value in line.items():
-            if value != None:
+            if value is not None:
                 print(template.format(schemaname, relname, key, value, now))
 
 #
@@ -86,7 +90,7 @@ for database in user_databases:
         relname = line.pop("relname")
 
         for key, value in line.items():
-            if value != None:
+            if value is not None:
                 print(template.format(schemaname, relname, key, value, now))
 
 #
@@ -110,7 +114,7 @@ for database in user_databases:
         indexrelname = line.pop("indexrelname")
 
         for key, value in line.items():
-            if value != None:
+            if value is not None:
                 print(template.format(nspname, relname, indexrelname,
                                       key, value, now))
 
@@ -130,7 +134,7 @@ for database in user_databases:
         indexrelname = line.pop("indexrelname")
 
         for key, value in line.items():
-            if value != None:
+            if value is not None:
                 print(template.format(schemaname, relname, indexrelname,
                                       key, value, now))
 
@@ -148,7 +152,7 @@ for database in user_databases:
         relname = line.pop("relname")
 
         for key, value in line.items():
-            if value != None:
+            if value is not None:
                 print(template.format(schemaname, relname, key, value, now))
 
 #
@@ -165,5 +169,5 @@ for database in user_databases:
         funcname = line.pop("funcname")
 
         for key, value in line.items():
-            if value != None:
+            if value is not None:
                 print(template.format(schemaname, funcname, key, value, now))

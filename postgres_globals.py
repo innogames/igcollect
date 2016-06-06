@@ -7,7 +7,11 @@
 
 import time
 
-from libigcollect.postgres import get_prefix, get_user_databases, connect_and_execute
+from libigcollect.postgres import (
+    get_prefix,
+    get_user_databases,
+    connect_and_execute,
+)
 
 prefix = get_prefix()
 user_databases = get_user_databases()
@@ -26,7 +30,7 @@ for line in connect_and_execute(query):
     datname = line.pop("datname")
 
     for key, value in line.items():
-        if value != None:
+        if value is not None:
             print(template.format(datname, key, value, now))
 
 #
@@ -133,7 +137,7 @@ for line in connect_and_execute(query):
     spcname = line.pop("spcname")
 
     for key, value in line.items():
-        if value != None:
+        if value is not None:
             print(template.format(spcname, key, value, now))
 
 #
@@ -153,7 +157,7 @@ for line in connect_and_execute(query):
     datname = line.pop("datname")
 
     for key, value in line.items():
-        if value != None:
+        if value is not None:
             print(template.format(datname, key, value, now))
 
 #
@@ -198,5 +202,5 @@ query = """SELECT checkpoints_timed, checkpoints_req,
 now = str(int(time.time()))
 
 for key, value in connect_and_execute(query)[0].items():
-    if value != None:
+    if value is not None:
         print(template.format(key, value, now))
