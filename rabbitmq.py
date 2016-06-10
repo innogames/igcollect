@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# igcollect - PostgreSQL objects
+# igcollect - Rabbitmq stat
 #
 # Copyright (c) 2016, InnoGames GmbH
 #
