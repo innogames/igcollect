@@ -24,7 +24,7 @@ def get_process_data(process_name):
     try:
         pid = sp.check_output(['pgrep', '-f', process_name])
         process_data = sp.check_output(['ps', '-p', pid.replace('\n',''), '-o', 'pcpu,pmem']).split('\n')
-        process_data_split = process_data[1].strip().split(' ')
+        process_data_split = process_data[1].strip().split()
         return process_data_split[0], process_data_split[1]
     except:
         return False, False
