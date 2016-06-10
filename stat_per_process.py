@@ -21,13 +21,13 @@ def get_process_list(config_file):
 
 
 def get_process_data(process_name):
-    pid = sp.check_output(['pgrep', '-f', process_name])
-    process_data = sp.check_output(['ps', '-p', pid.replace('\n',''), '-o', 'pcpu,pmem']).split('\n')
-    if len(process_data)>1:
-        process_data_split = process_data[1].split(' ')
-        return process_data_split[1], process_data_split[2]
-    else:
-        return false, false
+    try:
+        pid = sp.check_output(['pgrep', '-f', process_name])
+        process_data = sp.check_output(['ps', '-p', pid.replace('\n',''), '-o', 'pcpu,pmem']).split('\n')
+        process_data_split = process_data[1].strip().split(' ')
+        return process_data_split[0], process_data_split[1]
+    except:
+        return False, False
 
 
 hostname = socket.gethostname().replace('.','_')
