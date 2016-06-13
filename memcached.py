@@ -46,7 +46,12 @@ def main(argv=None):
     template = 'servers.' + hostname + '.software.memcached.{1} {2} ' + timestamp
 
     for key in memcached:
-      print(template.format(hostname,key, memcached[key]))
+      try:
+        float(memcached[key])
+        print(template.format(hostname,key, memcached[key]))
+      except ValueError:
+        pass
+
 
 if __name__ == '__main__':
     main()
