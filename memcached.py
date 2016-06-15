@@ -5,23 +5,22 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import re
 import telnetlib
 import sys
 import socket
 import time
 
-stat_regex = re.compile(ur'STAT (.*) (.*)\r')
-
 
 def main(host='127.0.0.1', port='11211'):
-    stats = dict(stat_regex.findall(command(host, port, 'stats')))
     hostname = socket.gethostname().replace('.', '_')
     ts = str(int(time.time()))
     template = 'servers.' + hostname + '.software.memcached.{1} {2} ' + ts
 
-    for key in stats:
-        print(template.format(hostname, key, stats[key]))
+    for line in command(host, port, 'stats').splitlines():
+        if line.startswith('STAT '):
+            header, key, value = line.split()
+            if key.replace('_', '').isalpha() and is_float(value):
+                print(template.format(hostname, key, value))
 
 
 def command(host,  port, cmd):
@@ -29,6 +28,15 @@ def command(host,  port, cmd):
     client = telnetlib.Telnet(host, port)
     client.write(cmd + '\n')
     return client.read_until('END')
+
+
+def is_float(value):
+    try:
+        float(value)
+    except ValueError:
+        return False
+    else:
+        return True
 
 
 if __name__ == '__main__':
