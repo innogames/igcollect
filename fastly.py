@@ -55,8 +55,8 @@ def main(args):
     # Just show a list of possible services
     if args.show_list:
         all_services = get_services()
-        for service in all_services:
-            print(service)
+        for service_id, service_name in all_services.items():
+            print('{}:{}'.format(service_name, service_id))
         sys.exit(0)
 
     # Query the API for all regions and print the list of them
@@ -64,75 +64,73 @@ def main(args):
         print(get_regions())
         sys.exit(0)
 
-    all_services = get_services()
-    if args.service:
-        try:
-            all_services = {args.service: all_services[args.service]}
-        except:
-            print("unknown service: %s" % args.service)
-            sys.exit(1)
-
-    # Always set the end time to now - 30 mintues to not get rate limted,
-    # if you more recent data, you need to specify start and end time
-    # using the -f and -t parameter
-    now = int(time.time())
-    endtime = now - 1900;
-
-    # select reasonable default intervals for the query,
-    # for a minutely interval we return an hours worth of data
-    # for an hourly we return one day and
-    # for a daily interval we'll retrun a months
+    # region Setting the from and to timestamps
     interval = args.interval
-    if interval == 'minute':
-        starttime = now - 2500
-    elif interval == 'hour':
-        starttime = now - 88201
-    elif interval == 'day':
-        starttime = now - 2680201
+    now = int(time.time())
 
-    # use the provided start and end if present
-    if args.end_time: endtime = args.end_time
-    if args.start_time: starttime = args.start_time
+    # Always set the end time to now - 30 minutes to not get rate limited.
+    # If you want more recent data, you need to specify start and end time
+    # using the -f and -t parameters.
+    if args.end_time:
+        end_time = args.end_time
+    else:
+        end_time = now - 1800  # 30 * 60
 
+    if args.start_time:
+        start_time = args.start_time
+    else:
+        # Select reasonable default intervals for the query. For minutely
+        # interval, we return hours worth of data; for hourly, we return
+        # one day; and for a daily interval, we'll return a month (30 days).
+        if interval == 'minute':
+            start_time = now - 3600  # 60 * 60
+        elif interval == 'hour':
+            start_time = now - 86400  # 24 * 60 60
+        elif interval == 'day':
+            start_time = now - 3456000  # 30 * 24 * 60 * 60
+        else:
+            start_time = now - 3600
+    # endregion Setting the from and to timestamps
+
+    service = None
+    if args.service:
+        service = get_service_by_name(args.service)
+        if not service:
+            print('Unknown Service: {0:s}'.format(args.service))
+            sys.exit(1)
+        all_services = {service: args.service}
+    else:
+        all_services = get_services()
+
+    string = GRAPHITE_PREFIX + '.{service}.{region}.{{value}}'
     regions = get_regions()
-    for service in all_services:
-        for region in regions:
-            try:
-                stats_data = get_data(
-                    "/stats/service/%s?from=%s&to=%s&by=%s&region=%s" % (
-                        all_services[service], starttime, endtime, interval,
-                        region))
-                for entry in stats_data['data']:
-                    try:
-                        # these values should be summarized by graphite using
-                        # the average function later
-                        for i in ['hit_ratio', 'hits_time', 'miss_time']:
-                            print '%s.%s.%s.%s %s %s' % (
-                                GRAPHITE_PREFIX, service.replace(' ', '_'),
-                                region,
-                                i, str(float(entry[i])),
-                                str(entry['start_time']))
+    for region in regions:
+        try:
+            stats_data = get_service_data(service=service, region=region,
+                                          cfrom=start_time,
+                                          to=end_time, interval=interval)
+        except BaseException as e:
+            print(e)
+            continue
 
-                        # these values contain an amount for an interval and
-                        # therefore need to be summarized in graphite using the
-                        # sum() function, in the default behavior this is done
-                        # for all metrics ending in .count therefore we'll
-                        # amend it here
-                        for i in ['body_size', 'bandwidth', 'errors',
-                                  'header_size', 'hits', 'miss', 'pass', 'pipe',
-                                  'requests', 'status_1xx', 'status_200',
-                                  'status_204', 'status_2xx', 'status_301',
-                                  'status_302', 'status_304', 'status_3xx',
-                                  'status_4xx', 'status_503', 'status_5xx',
-                                  'uncacheable']:
-                            print '%s.%s.%s.%s.count %s %s' % (
-                                GRAPHITE_PREFIX, service.replace(' ', '_'),
-                                region,
-                                i, str(float(entry[i])),
-                                str(entry['start_time']))
-                    except:
-                        continue
-            except:
+        for service, data in stats_data.items():
+            if service not in all_services:
+                continue
+
+            service_name = all_services[service]
+            service_name = service_name.replace(' ', '_')
+            try:
+                output = string.format(service=service_name, region=region)
+
+                for entry in data:
+                    for key in entry:
+                        value = format_key(entry, key)
+                        if not value:
+                            continue
+                        print(output.format(value=value))
+
+            except BaseException as e:
+                print(e)
                 continue
 
 
@@ -159,10 +157,9 @@ def get_service_data(service=None, region=None, cfrom=None, to=None,
 
 
 def get_services():
-    """Query the services api and return a dictionary containing
-    the service name and service id"""
+    """Query the services API"""
     service_data = get_data('/service')
-    return {s['name']: s['id'] for s in service_data}
+    return {s['id']: s['name'] for s in service_data}
 
 
 def get_service_by_name(name):
@@ -176,7 +173,7 @@ def get_service_by_name(name):
 
 
 def get_regions():
-    """Query the regions api and return a list of them"""
+    """Query the regions API"""
     try:
         return get_data('/stats/regions')['data']
     except BaseException as e:
