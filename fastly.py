@@ -13,6 +13,12 @@ import time
 
 GRAPHITE_PREFIX = 'cdn.fastly'
 FASTLY_BASE_URL = 'https://api.fastly.com'
+AVG_KEYS = ('hit_ratio', 'hits_time', 'miss_time')
+SUM_KEYS = (
+    'body_size', 'bandwidth', 'errors', 'header_size', 'hits', 'miss', 'pass',
+    'pipe', 'requests', 'status_1xx', 'status_200', 'status_204', 'status_2xx',
+    'status_301', 'status_302', 'status_304', 'status_3xx', 'status_4xx',
+    'status_503', 'status_5xx', 'uncacheable')
 API_KEY = None
 
 
@@ -184,6 +190,27 @@ def get_data(fastly_url):
     req = urllib2.Request(url=url, headers={'Fastly-Key': API_KEY})
     fd = urllib2.urlopen(req, timeout=10)
     return json.loads(fd.read())
+
+
+def format_key(entry, key):
+    format_string = '{key}{count} {value} {start_time}'
+
+    # These values should be summarized by graphite using the
+    # average function later
+    if key in AVG_KEYS:
+        return format_string.format(key=key, count='',
+                                    value=str(float(entry[key])),
+                                    start_time=str(entry['start_time']))
+
+    # These values contain an amount for an interval and
+    # therefore need to be summarized in graphite using the
+    # sum() function, in the default behavior this is done for
+    # all metrics ending in .count therefore we'll amend it
+    # here.
+    if key in SUM_KEYS:
+        return format_string.format(key=key, count='.count',
+                                    value=str(float(entry[key])),
+                                    start_time=str(entry['start_time']))
 
 
 if __name__ == '__main__':
