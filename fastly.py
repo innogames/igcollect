@@ -11,36 +11,38 @@ import urllib2
 import argparse
 import time
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-t", "--to", dest="end_time", type=int,
-                    help="until when do you want to print the data")
-parser.add_argument("-f", "--from", dest="start_time", type=int,
-                    help="start of the data printed")
-parser.add_argument("-i", "--interval", dest="interval",
-                    choices=['minute', 'hour', 'day'], default='minute',
-                    help="interval the query should return the data in")
-parser.add_argument("-s", "--service", dest="service",
-                    help="will only query the one service, if omitted all "
-                         "services will be queried")
-parser.add_argument("-l", "--list", action="store_true", dest="show_list",
-                    help="Shows you available services")
-parser.add_argument("-r", "--regions", action="store_true", dest="regions",
-                    help="Shows you the currently available regions")
-parser.add_argument("-k", "--key", dest="apikey",
-                    help="here you can provided the Fastly API Key this will "
-                         "replace one contained in the script")
-args = parser.parse_args()
-
-API_KEY = ''
 GRAPHITE_PREFIX = 'cdn.fastly'
-if args.apikey:
+API_KEY = None
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-k', '--key', dest='apikey', required=True,
+                        help='here you can provided the Fastly API Key this '
+                             'will replace one contained in the script')
+    parser.add_argument('-s', '--service', dest='service',
+                        help='will only query the one service, if omitted all '
+                             'services will be queried')
+    parser.add_argument('-t', '--to', dest='end_time', type=int,
+                        help='until when do you want to print the data')
+    parser.add_argument('-f', '--from', dest='start_time', type=int,
+                        help='start of the data printed')
+    parser.add_argument('-i', '--interval', dest='interval',
+                        choices=['minute', 'hour', 'day'], default='minute',
+                        help='interval the query should return the data in')
+    parser.add_argument('-l', '--list', action='store_true', dest='show_list',
+                        help='Shows you available services')
+    parser.add_argument('-r', '--regions', action='store_true', dest='regions',
+                        help='Shows you the currently available regions')
+    return parser.parse_args()
+
+
+def main(args):
+    global API_KEY
     API_KEY = args.apikey
 
-
-def main():
-    # You will need at least python2.7
-    if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-        sys.stderr.write("at least python2.7 is required\n")
+    if not API_KEY:
+        print('you have to specify a api key with --key parameter')
         sys.exit(1)
 
     # Just show a list of possible services
@@ -149,8 +151,8 @@ def get_regions():
     return regions
 
 
-def get_data(fastly_url, api_header={"Fastly-Key": API_KEY}):
-    req = urllib2.Request(url=fastly_url, headers=api_header)
+def get_data(fastly_url):
+    req = urllib2.Request(url=fastly_url, headers={"Fastly-Key": API_KEY})
     # print(time.time(),fastly_url)
     r = 0
     f = None
@@ -164,5 +166,5 @@ def get_data(fastly_url, api_header={"Fastly-Key": API_KEY}):
     return json.loads(f.read())
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    main(parse_args())
