@@ -102,13 +102,9 @@ def main(args):
     string = GRAPHITE_PREFIX + '.{service}.{region}.{{value}}'
     regions = get_regions(api_key)
     for region in regions:
-        try:
-            stats_data = get_service_data(api_key, service=service,
-                                          region=region, cfrom=start_time,
-                                          to=end_time, interval=interval)
-        except BaseException as e:
-            print(e)
-            continue
+        stats_data = get_service_data(api_key, service=service,
+                                      region=region, cfrom=start_time,
+                                      to=end_time, interval=interval)
 
         for service, data in stats_data.items():
             if service not in all_services:
@@ -116,19 +112,14 @@ def main(args):
 
             service_name = all_services[service]
             service_name = service_name.replace(' ', '_')
-            try:
-                output = string.format(service=service_name, region=region)
+            output = string.format(service=service_name, region=region)
 
-                for entry in data:
-                    for key in entry:
-                        value = format_key(entry, key)
-                        if not value:
-                            continue
-                        print(output.format(value=value))
-
-            except BaseException as e:
-                print(e)
-                continue
+            for entry in data:
+                for key in entry:
+                    value = format_key(entry, key)
+                    if not value:
+                        continue
+                    print(output.format(value=value))
 
 
 def get_service_data(api_key, service=None, region=None, cfrom=None, to=None,
@@ -161,22 +152,14 @@ def get_services(api_key):
 
 def get_service_by_name(name, api_key):
     """Search for a service by name"""
-    try:
-        service_info = get_data('/service/search?name={:s}'.format(name), api_key)
-        if service_info:
-            return service_info['id']
-    except BaseException as e:
-        print(e)
+    service_info = get_data('/service/search?name={:s}'.format(name), api_key)
+    if service_info:
+        return service_info['id']
 
 
 def get_regions(api_key):
     """Query the regions API"""
-    try:
-        return get_data('/stats/regions', api_key)['data']
-    except BaseException as e:
-        # If the api is not available return a default set of regions
-        print(e)
-        return ('africa', 'anzac', 'asia', 'europe', 'latam', 'usa')
+    return get_data('/stats/regions', api_key)['data']
 
 
 def get_data(fastly_url, api_key):
