@@ -130,11 +130,43 @@ def main(args):
                 continue
 
 
+def get_service_data(service=None, region=None, cfrom=None, to=None,
+                     interval=None):
+    query = ''
+    if region:
+        query += 'region={}&'.format(region)
+    if cfrom:
+        query += 'from={}&'.format(cfrom)
+    if to:
+        query += 'to={}&'.format(to)
+    if to:
+        query += 'by={}&'.format(interval)
+
+    if not service:
+        url = '/stats?' + query
+        services_data = get_data(url)['data']
+    else:
+        url = '/stats/service/{s}?{q}'.format(s=service, q=query)
+        services_data = {service: get_data(url)['data']}
+
+    return {service_id: data for service_id, data in services_data.items()}
+
+
 def get_services():
     """Query the services api and return a dictionary containing
     the service name and service id"""
     service_data = get_data('/service')
     return {s['name']: s['id'] for s in service_data}
+
+
+def get_service_by_name(name):
+    """Search for a service by name"""
+    try:
+        service_info = get_data('/service/search?name={:s}'.format(name))
+        if service_info:
+            return service_info['id']
+    except BaseException as e:
+        print(e)
 
 
 def get_regions():
