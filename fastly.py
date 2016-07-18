@@ -7,6 +7,7 @@
 
 import sys
 import json
+import urllib
 import urllib2
 import argparse
 import time
@@ -102,9 +103,10 @@ def main(args):
     string = GRAPHITE_PREFIX + '.{service}.{region}.{{value}}'
     regions = get_regions(api_key)
     for region in regions:
-        stats_data = get_service_data(api_key, service=service,
-                                      region=region, cfrom=start_time,
-                                      to=end_time, interval=interval)
+        stats_data = get_service_data(api_key, service, {
+            'region': region,
+            'from': start_time,
+            'to': end_time, 'by': interval})
 
         for service, data in stats_data.items():
             if service not in all_services:
@@ -122,17 +124,8 @@ def main(args):
                     print(output.format(value=value))
 
 
-def get_service_data(api_key, service=None, region=None, cfrom=None, to=None,
-                     interval=None):
-    query = ''
-    if region:
-        query += 'region={}&'.format(region)
-    if cfrom:
-        query += 'from={}&'.format(cfrom)
-    if to:
-        query += 'to={}&'.format(to)
-    if to:
-        query += 'by={}&'.format(interval)
+def get_service_data(api_key, service=None, query=None):
+    query = urllib.urlencode(query)
 
     if not service:
         url = '/stats?' + query
