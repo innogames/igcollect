@@ -163,14 +163,14 @@ def get_data(fastly_url, api_key):
 
 
 def format_key(entry, key):
-    format_string = '{key}{count} {value} {start_time}'
+    template = '{key}{count} {value} {start_time}'
 
     # These values should be summarized by graphite using the
     # average function later
     if key in AVG_KEYS:
-        return format_string.format(key=key, count='',
-                                    value=str(float(entry[key])),
-                                    start_time=str(entry['start_time']))
+        return template.format(key=key, count='',
+                               value=float(entry[key]),
+                               start_time=entry['start_time'])
 
     # These values contain an amount for an interval and
     # therefore need to be summarized in graphite using the
@@ -178,9 +178,9 @@ def format_key(entry, key):
     # all metrics ending in .count therefore we'll amend it
     # here.
     if key in SUM_KEYS:
-        return format_string.format(key=key, count='.count',
-                                    value=str(float(entry[key])),
-                                    start_time=str(entry['start_time']))
+        return template.format(key=key, count='.count',
+                               value=float(entry[key]),
+                               start_time=entry['start_time'])
 
 
 if __name__ == '__main__':
