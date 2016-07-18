@@ -130,8 +130,8 @@ def main(args):
 
 
 def get_services():
-    ''' query the services api and return a dictionary containing the
-        service name and the service id'''
+    """Query the services api and return a dictionary containing the
+    service name and the service id"""
     service_data = get_data("https://api.fastly.com/service")
     all_services = {}
     for service in service_data:
@@ -141,7 +141,7 @@ def get_services():
 
 
 def get_regions():
-    ''' query the regions api and return a list of them '''
+    """Query the regions api and return a list of them"""
     try:
         regions = get_data("https://api.fastly.com/stats/regions")[u'data']
     except:
