@@ -19,12 +19,11 @@ SUM_KEYS = (
     'pipe', 'requests', 'status_1xx', 'status_200', 'status_204', 'status_2xx',
     'status_301', 'status_302', 'status_304', 'status_3xx', 'status_4xx',
     'status_503', 'status_5xx', 'uncacheable')
-API_KEY = None
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-k', '--key', dest='apikey', required=True,
+    parser.add_argument('-k', '--key', dest='api_key', required=True,
                         help='here you can provided the Fastly API Key this '
                              'will replace one contained in the script')
     parser.add_argument('-s', '--service', dest='service',
@@ -45,23 +44,21 @@ def parse_args():
 
 
 def main(args):
-    global API_KEY
-    API_KEY = args.apikey
-
-    if not API_KEY:
+    api_key = args.api_key
+    if not api_key:
         print('you have to specify a api key with --key parameter')
         sys.exit(1)
 
     # Just show a list of possible services
     if args.show_list:
-        all_services = get_services()
+        all_services = get_services(api_key)
         for service_id, service_name in all_services.items():
             print('{}:{}'.format(service_name, service_id))
         sys.exit(0)
 
     # Query the API for all regions and print the list of them
     if args.regions:
-        print(get_regions())
+        print(get_regions(api_key))
         sys.exit(0)
 
     # region Setting the from and to timestamps
@@ -94,20 +91,20 @@ def main(args):
 
     service = None
     if args.service:
-        service = get_service_by_name(args.service)
+        service = get_service_by_name(args.service, api_key)
         if not service:
             print('Unknown Service: {0:s}'.format(args.service))
             sys.exit(1)
         all_services = {service: args.service}
     else:
-        all_services = get_services()
+        all_services = get_services(api_key)
 
     string = GRAPHITE_PREFIX + '.{service}.{region}.{{value}}'
-    regions = get_regions()
+    regions = get_regions(api_key)
     for region in regions:
         try:
-            stats_data = get_service_data(service=service, region=region,
-                                          cfrom=start_time,
+            stats_data = get_service_data(api_key, service=service,
+                                          region=region, cfrom=start_time,
                                           to=end_time, interval=interval)
         except BaseException as e:
             print(e)
@@ -134,7 +131,7 @@ def main(args):
                 continue
 
 
-def get_service_data(service=None, region=None, cfrom=None, to=None,
+def get_service_data(api_key, service=None, region=None, cfrom=None, to=None,
                      interval=None):
     query = ''
     if region:
@@ -148,43 +145,43 @@ def get_service_data(service=None, region=None, cfrom=None, to=None,
 
     if not service:
         url = '/stats?' + query
-        services_data = get_data(url)['data']
+        services_data = get_data(url, api_key)['data']
     else:
         url = '/stats/service/{s}?{q}'.format(s=service, q=query)
-        services_data = {service: get_data(url)['data']}
+        services_data = {service: get_data(url, api_key)['data']}
 
     return {service_id: data for service_id, data in services_data.items()}
 
 
-def get_services():
+def get_services(api_key):
     """Query the services API"""
-    service_data = get_data('/service')
+    service_data = get_data('/service', api_key)
     return {s['id']: s['name'] for s in service_data}
 
 
-def get_service_by_name(name):
+def get_service_by_name(name, api_key):
     """Search for a service by name"""
     try:
-        service_info = get_data('/service/search?name={:s}'.format(name))
+        service_info = get_data('/service/search?name={:s}'.format(name), api_key)
         if service_info:
             return service_info['id']
     except BaseException as e:
         print(e)
 
 
-def get_regions():
+def get_regions(api_key):
     """Query the regions API"""
     try:
-        return get_data('/stats/regions')['data']
+        return get_data('/stats/regions', api_key)['data']
     except BaseException as e:
         # If the api is not available return a default set of regions
         print(e)
         return ('africa', 'anzac', 'asia', 'europe', 'latam', 'usa')
 
 
-def get_data(fastly_url):
+def get_data(fastly_url, api_key):
     url = FASTLY_BASE_URL + fastly_url
-    req = urllib2.Request(url=url, headers={'Fastly-Key': API_KEY})
+    req = urllib2.Request(url=url, headers={'Fastly-Key': api_key})
     fd = urllib2.urlopen(req, timeout=10)
     return json.loads(fd.read())
 
