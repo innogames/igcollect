@@ -37,43 +37,6 @@ if args.apikey:
     API_KEY = args.apikey
 
 
-def get_data(fastly_url, api_header={"Fastly-Key": API_KEY}):
-    req = urllib2.Request(url=fastly_url, headers=api_header)
-    # print(time.time(),fastly_url)
-    r = 0
-    f = None
-    while f is None and r < 2:
-        try:
-            f = urllib2.urlopen(req, timeout=1)
-        except urllib2.URLError:
-            # print("timeout")
-            f = None
-            r += 1
-    return json.loads(f.read())
-
-
-def get_services():
-    ''' query the services api and return a dictionary containing the
-        service name and the service id'''
-    service_data = get_data("https://api.fastly.com/service")
-    all_services = {}
-    for service in service_data:
-        all_services[service['name']] = service['id']
-
-    return all_services
-
-
-def get_regions():
-    ''' query the regions api and return a list of them '''
-    try:
-        regions = get_data("https://api.fastly.com/stats/regions")[u'data']
-    except:
-        # if the api is not available return a default set of regions
-        return [u'africa', u'anzac', u'asia', u'europe', u'latam', u'usa']
-
-    return regions
-
-
 def main():
     # You will need at least python2.7
     if sys.version_info[0] == 2 and sys.version_info[1] < 7:
@@ -162,6 +125,43 @@ def main():
                         continue
             except:
                 continue
+
+
+def get_services():
+    ''' query the services api and return a dictionary containing the
+        service name and the service id'''
+    service_data = get_data("https://api.fastly.com/service")
+    all_services = {}
+    for service in service_data:
+        all_services[service['name']] = service['id']
+
+    return all_services
+
+
+def get_regions():
+    ''' query the regions api and return a list of them '''
+    try:
+        regions = get_data("https://api.fastly.com/stats/regions")[u'data']
+    except:
+        # if the api is not available return a default set of regions
+        return [u'africa', u'anzac', u'asia', u'europe', u'latam', u'usa']
+
+    return regions
+
+
+def get_data(fastly_url, api_header={"Fastly-Key": API_KEY}):
+    req = urllib2.Request(url=fastly_url, headers=api_header)
+    # print(time.time(),fastly_url)
+    r = 0
+    f = None
+    while f is None and r < 2:
+        try:
+            f = urllib2.urlopen(req, timeout=1)
+        except urllib2.URLError:
+            # print("timeout")
+            f = None
+            r += 1
+    return json.loads(f.read())
 
 
 if __name__ == "__main__":
