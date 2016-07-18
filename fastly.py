@@ -12,6 +12,7 @@ import argparse
 import time
 
 GRAPHITE_PREFIX = 'cdn.fastly'
+FASTLY_BASE_URL = 'https://api.fastly.com'
 API_KEY = None
 
 
@@ -92,7 +93,7 @@ def main(args):
         for region in regions:
             try:
                 stats_data = get_data(
-                    "https://api.fastly.com/stats/service/%s?from=%s&to=%s&by=%s&region=%s" % (
+                    "/stats/service/%s?from=%s&to=%s&by=%s&region=%s" % (
                         all_services[service], starttime, endtime, interval,
                         region))
                 for entry in stats_data['data']:
@@ -130,40 +131,27 @@ def main(args):
 
 
 def get_services():
-    """Query the services api and return a dictionary containing the
-    service name and the service id"""
-    service_data = get_data("https://api.fastly.com/service")
-    all_services = {}
-    for service in service_data:
-        all_services[service['name']] = service['id']
-
-    return all_services
+    """Query the services api and return a dictionary containing
+    the service name and service id"""
+    service_data = get_data('/service')
+    return {s['name']: s['id'] for s in service_data}
 
 
 def get_regions():
     """Query the regions api and return a list of them"""
     try:
-        regions = get_data("https://api.fastly.com/stats/regions")[u'data']
-    except:
-        # if the api is not available return a default set of regions
-        return [u'africa', u'anzac', u'asia', u'europe', u'latam', u'usa']
-
-    return regions
+        return get_data('/stats/regions')['data']
+    except BaseException as e:
+        # If the api is not available return a default set of regions
+        print(e)
+        return ('africa', 'anzac', 'asia', 'europe', 'latam', 'usa')
 
 
 def get_data(fastly_url):
-    req = urllib2.Request(url=fastly_url, headers={"Fastly-Key": API_KEY})
-    # print(time.time(),fastly_url)
-    r = 0
-    f = None
-    while f is None and r < 2:
-        try:
-            f = urllib2.urlopen(req, timeout=1)
-        except urllib2.URLError:
-            # print("timeout")
-            f = None
-            r += 1
-    return json.loads(f.read())
+    url = FASTLY_BASE_URL + fastly_url
+    req = urllib2.Request(url=url, headers={'Fastly-Key': API_KEY})
+    fd = urllib2.urlopen(req, timeout=10)
+    return json.loads(fd.read())
 
 
 if __name__ == '__main__':
