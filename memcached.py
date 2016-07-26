@@ -9,18 +9,19 @@ import telnetlib
 import sys
 import socket
 import time
+import re
 
 
 def main(host='127.0.0.1', port='11211'):
     hostname = socket.gethostname().replace('.', '_')
     ts = str(int(time.time()))
     template = 'servers.' + hostname + '.software.memcached.{1} {2} ' + ts
+    pattern = re.compile('STAT \w+ \d+(.\d+)?$')
 
     for line in command(host, port, 'stats').splitlines():
-        if line.startswith('STAT '):
+        if pattern.match(line):
             header, key, value = line.split()
-            if key.replace('_', '').isalpha() and is_float(value):
-                print(template.format(hostname, key, value))
+            print(template.format(hostname, key, value))
 
 
 def command(host,  port, cmd):
