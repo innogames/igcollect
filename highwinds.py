@@ -5,12 +5,14 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import sys
 import json
+import sys
+import time
 import urllib
 import urllib2
-import argparse
-import time
+from argparse import ArgumentParser
+
+import grequests
 
 GRAPHITE_PREFIX = 'cdn.highwinds'
 HIGHWINDS_BASE_URL = 'https://striketracker.highwinds.com/api/v1'
@@ -21,7 +23,7 @@ PLATFORMS = ('cds', 'sds', 'cdi', 'sdi')
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument("-t", "--to", dest="end_time", type=int,
                         help="until when do you want to print the data")
     parser.add_argument("-f", "--from", dest="start_time", type=int,
@@ -29,7 +31,7 @@ def parse_args():
     parser.add_argument("-i", "--interval", dest="interval",
                         choices=['PT5M', 'PT1H', 'P1M', 'P1D'], default='PT5M',
                         help="interval the query should return the data in")
-    parser.add_argument("--host", dest="host",
+    parser.add_argument("--filter-hosts", dest="filter_hosts",
                         help="will only query the one host, if omitted all "
                              "hosts will be queried")
     parser.add_argument("-l", "--list", action="store_true", dest="show_list",
@@ -52,7 +54,7 @@ def main(args):
 
     if not api_key or not account_hash:
         print('you have to specify an api key and account hash with --key '
-              'resp. --accounthash parameter')
+              'resp. --account-hash parameter')
         sys.exit(1)
 
     # Just show a list of possible hosts
@@ -67,12 +69,12 @@ def main(args):
         print(get_regions(api_key))
         sys.exit(0)
 
-    if args.host:
-        host = get_host_by_name(args.host, account_hash, api_key)
-        if not host:
-            print('Unknown Host: {0:s}'.format(args.host))
+    if args.filter_hosts:
+        hosts = get_hosts_by_name(args.filter_hosts, account_hash, api_key)
+        if not hosts:
+            print('Unknown Host: {0:s}'.format(args.filter_hosts))
             sys.exit(1)
-        all_hosts = {host['id']: host['name']}
+        all_hosts = hosts
     else:
         all_hosts = get_hosts(account_hash, api_key)
 
@@ -90,67 +92,88 @@ def main(args):
     # for an hourly we return one day and
     # for a daily interval we'll return a month
     interval = args.interval
-    if interval == 'PT5M':
-        start_time = end_time - 3600
-    elif interval == 'PT1H':
-        start_time = end_time - 86400
-    elif interval == 'P1D':
-        start_time = end_time - 2680201
-    else:
-        start_time = end_time - 3600  # minutely interval is default
 
     # use the provided start if present
     if args.start_time:
         start_time = args.start_time
+    else:
+        if interval == 'PT5M':
+            start_time = end_time - 3600
+        elif interval == 'PT1H':
+            start_time = end_time - 86400
+        elif interval == 'P1D':
+            start_time = end_time - 2678400
+        else:
+            start_time = end_time - 3600  # minutely interval is default
 
     start_time = get_date_and_time(start_time)
     end_time = get_date_and_time(end_time)
 
-    for region in get_regions(api_key):
-        for platform in PLATFORMS:
-            query = {'startDate': start_time, 'endDate': end_time,
-                     'granularity': interval, 'platforms': platform,
-                     'billingRegions': region, 'groupBy': 'HOST'}
-            stats_series = get_host_data(account_hash, api_key, query)
-            for stats_host in stats_series:
-                host_id = stats_host['key']
-                if host_id not in all_hosts:
-                    continue
+    pairs = [
+        (region, platform)
+        for region in get_regions(api_key)
+        for platform in PLATFORMS
+        ]
 
-                if not stats_host['data']:
-                    continue
+    responses = zip(
+        pairs,
+        grequests.map(get_host_data_request(account_hash, api_key, {
+            'startDate': start_time, 'endDate': end_time,
+            'granularity': interval, 'platforms': platform,
+            'billingRegions': region, 'groupBy': 'HOST',
+        }) for region, platform in pairs)
+    )
 
-                host_name = all_hosts[host_id]
-                host_escaped = (host_name.replace(' ', '_')
-                                .replace('.', '_'))
+    for (region, platform), response in responses:
+        stats_series = response.json()['series']
+        for stats_host in stats_series:
+            host_id = stats_host['key']
+            if host_id not in all_hosts:
+                continue
 
-                metrics = stats_host['metrics']
-                data = stats_host['data']
-                stats = []
-                for i in data:
-                    stats.append(dict((zip(metrics, i))))
+            if not stats_host['data']:
+                continue
 
-                for i in stats:
-                    timestamp = int(int(i['usageTime']) / 1000)
-                    for value in AVG_KEYS:
-                        print("%s.%s.%s.%s.%s %f %s" % (
-                            GRAPHITE_PREFIX, host_escaped, platform,
-                            region, value, i[value],
-                            timestamp))
+            host_name = (all_hosts[host_id]
+                         .replace(' ', '_')
+                         .replace('.', '_'))
 
-                    for value in SUM_KEYS:
-                        print("%s.%s.%s.%s.%s.count %f %s" % (
-                            GRAPHITE_PREFIX, host_escaped, platform,
-                            region, value, i[value],
-                            timestamp))
+            stats = (dict(zip(stats_host['metrics'], d)) for d in
+                     stats_host['data'])
+
+            for stat in stats:
+                timestamp = int(int(stat['usageTime']) / 1000)
+                for value in AVG_KEYS:
+                    print("%s.%s.%s.%s.%s %f %s" % (
+                        GRAPHITE_PREFIX, host_name, platform,
+                        region, value, stat[value],
+                        timestamp))
+
+                for value in SUM_KEYS:
+                    print("%s.%s.%s.%s.%s.count %f %s" % (
+                        GRAPHITE_PREFIX, host_name, platform,
+                        region, value, stat[value],
+                        timestamp))
 
 
-def get_host_data(account_hash, api_key, query=None):
+def get_host_data_request(account_hash, api_key, query={}):
+    url = '/accounts/{account_hash}/analytics/transfer'.format(
+        account_hash=account_hash)
+    return get_data_request(url, api_key, query)
+
+
+def get_host_data(account_hash, api_key, query={}):
     query = urllib.urlencode(query)
     url = '/accounts/{account_hash}/analytics/transfer?{query}'.format(
         account_hash=account_hash, query=query)
     hosts_data = get_data(url, api_key)['series']
     return hosts_data
+
+
+def get_data_request(highwinds_url, api_key, params={}):
+    return grequests.get(HIGHWINDS_BASE_URL + highwinds_url,
+                         headers={"Authorization": 'Bearer {}'.format(
+                             api_key)}, params=params)
 
 
 def get_data(highwinds_url, api_key):
@@ -169,12 +192,10 @@ def get_hosts(account_hash, api_key):
     return {h['hashCode']: h['name'] for h in host_data['list']}
 
 
-def get_host_by_name(host_name, account_hash, api_key):
+def get_hosts_by_name(host_name, account_hash, api_key):
     url = '/accounts/{:s}/search?search={:s}'.format(account_hash, host_name)
-    host = get_data(url, api_key)
-    if host['hosts'] and host['hosts'][0]:
-        host = host['hosts'][0]
-        return {'id': host['hostHash'], 'name': host['name']}
+    hosts = get_data(url, api_key)['hosts']
+    return {h['hostHash']: h['name'] for h in hosts}
 
 
 def get_regions(api_key):
