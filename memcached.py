@@ -16,7 +16,7 @@ def main(host='127.0.0.1', port='11211'):
     hostname = socket.gethostname().replace('.', '_')
     ts = str(int(time.time()))
     template = 'servers.' + hostname + '.software.memcached.{1} {2} ' + ts
-    pattern = re.compile('STAT \w+ \d+(.\d+)?$')
+    pattern = re.compile('STAT \w+ \d+(?:.\d+)?$')
 
     for line in command(host, port, 'stats').splitlines():
         if pattern.match(line):
