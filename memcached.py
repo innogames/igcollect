@@ -5,11 +5,11 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import telnetlib
-import sys
-import socket
-import time
 import re
+import socket
+import sys
+import telnetlib
+import time
 
 
 def main(host='127.0.0.1', port='11211'):
@@ -24,7 +24,7 @@ def main(host='127.0.0.1', port='11211'):
             print(template.format(hostname, key, value))
 
 
-def command(host,  port, cmd):
+def command(host, port, cmd):
     """Write a command to telnet and return the response"""
     client = telnetlib.Telnet(host, port)
     client.write(cmd + '\n')
