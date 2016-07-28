@@ -7,12 +7,17 @@
 
 import sys
 import json
+import urllib
 import urllib2
 import argparse
 import time
 
 GRAPHITE_PREFIX = 'cdn.highwinds'
 HIGHWINDS_BASE_URL = 'https://striketracker.highwinds.com/api/v1'
+AVG_KEYS = ('xferRateMeanMbps', 'xferRateMbps', 'userXferRateMbps', 'rps',
+            'completionRatio')
+SUM_KEYS = ('xferUsedTotalMB', 'requestsCountTotal', 'responseSizeMeanMB')
+PLATFORMS = ('cds', 'sds', 'cdi', 'sdi')
 
 
 def parse_args():
@@ -24,14 +29,14 @@ def parse_args():
     parser.add_argument("-i", "--interval", dest="interval",
                         choices=['PT5M', 'PT1H', 'P1M', 'P1D'], default='PT5M',
                         help="interval the query should return the data in")
-    parser.add_argument("-s", "--service", dest="service",
-                        help="will only query the one service, if omitted all "
-                             "services will be queried")
+    parser.add_argument("--host", dest="host",
+                        help="will only query the one host, if omitted all "
+                             "hosts will be queried")
     parser.add_argument("-l", "--list", action="store_true", dest="show_list",
-                        help="Shows you available services")
+                        help="Shows you available hosts")
     parser.add_argument("-r", "--regions", action="store_true", dest="regions",
                         help="Shows you the currently available regions")
-    parser.add_argument("-a", "--accounthash", dest="account_hash",
+    parser.add_argument("-a", "--account-hash", dest="account_hash",
                         required=True,
                         help="here you can provied the highwinds account hash "
                              "this will replace one contained in the script")
@@ -50,16 +55,11 @@ def main(args):
               'resp. --accounthash parameter')
         sys.exit(1)
 
-    # You will need at least python2.7
-    if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-        sys.stderr.write("at least python2.7 is required\n")
-        sys.exit(1)
-
-    # Just show a list of possible services
+    # Just show a list of possible hosts
     if args.show_list:
-        all_services = get_services(api_key)
-        for service in all_services:
-            print(service)
+        all_hosts = get_hosts(account_hash, api_key)
+        for host_id, host_name in all_hosts.items():
+            print('{}:{}'.format(host_name, host_id))
         sys.exit(0)
 
     # Query the API for all regions and print the list of them
@@ -67,13 +67,14 @@ def main(args):
         print(get_regions(api_key))
         sys.exit(0)
 
-    all_services = get_services(account_hash, api_key)
-    if args.service:
-        try:
-            all_services = {args.service: all_services[args.service]}
-        except:
-            print("unknown service: %s" % args.service)
+    if args.host:
+        host = get_host_by_name(args.host, account_hash, api_key)
+        if not host:
+            print('Unknown Host: {0:s}'.format(args.host))
             sys.exit(1)
+        all_hosts = {host['id']: host['name']}
+    else:
+        all_hosts = get_hosts(account_hash, api_key)
 
     # Always set the end time to now - 30 minutes to not get rate limited,
     # if you more recent data, you need to specify start and end time
@@ -102,44 +103,54 @@ def main(args):
     if args.start_time:
         start_time = args.start_time
 
-    for service in all_services:
-        service_escaped = service.replace(' ', '_').replace('.', '_')
-        for region in get_regions(api_key):
-            for service_type in ['cds', 'sds', 'cdi', 'sdi']:
-                try:
-                    url = "/accounts/%s/analytics/transfer?startDate=%s&endDate=%s&granularity=%s&platforms=%s&pops=&billingRegions=%s&accounts=&hosts=%s&groupBy=HOST" % (
-                        account_hash, get_date_and_time(start_time),
-                        get_date_and_time(end_time), interval, service_type,
-                        region,
-                        all_services[service])
+    start_time = get_date_and_time(start_time)
+    end_time = get_date_and_time(end_time)
 
-                    stats_data = get_data(url, api_key)
-
-                    metrics = stats_data[u'series'][0][u'metrics']
-                    data = stats_data[u'series'][0][u'data']
-                    stats = []
-
-                    for i in data:
-                        stats.append(dict((zip(metrics, i))))
-
-                    for i in stats:
-                        timestamp = int(int(i[u'usageTime']) / 1000)
-                        for value in [u'xferRateMeanMbps', u'xferRateMbps',
-                                      u'userXferRateMbps', u'rps',
-                                      u'completionRatio']:
-                            print("%s.%s.%s.%s.%s %f %s" % (
-                                GRAPHITE_PREFIX, service_escaped, service_type,
-                                region, str(value), float(i[value]),
-                                str(timestamp)))
-
-                        for value in [u'xferUsedTotalMB', u'requestsCountTotal',
-                                      u'responseSizeMeanMB']:
-                            print("%s.%s.%s.%s.%s.count %f %s" % (
-                                GRAPHITE_PREFIX, service_escaped, service_type,
-                                region, str(value), float(i[value]),
-                                str(timestamp)))
-                except:
+    for region in get_regions(api_key):
+        for platform in PLATFORMS:
+            query = {'startDate': start_time, 'endDate': end_time,
+                     'granularity': interval, 'platforms': platform,
+                     'billingRegions': region, 'groupBy': 'HOST'}
+            stats_series = get_host_data(account_hash, api_key, query)
+            for stats_host in stats_series:
+                host_id = stats_host['key']
+                if host_id not in all_hosts:
                     continue
+
+                if not stats_host['data']:
+                    continue
+
+                host_name = all_hosts[host_id]
+                host_escaped = (host_name.replace(' ', '_')
+                                .replace('.', '_'))
+
+                metrics = stats_host['metrics']
+                data = stats_host['data']
+                stats = []
+                for i in data:
+                    stats.append(dict((zip(metrics, i))))
+
+                for i in stats:
+                    timestamp = int(int(i['usageTime']) / 1000)
+                    for value in AVG_KEYS:
+                        print("%s.%s.%s.%s.%s %f %s" % (
+                            GRAPHITE_PREFIX, host_escaped, platform,
+                            region, value, i[value],
+                            timestamp))
+
+                    for value in SUM_KEYS:
+                        print("%s.%s.%s.%s.%s.count %f %s" % (
+                            GRAPHITE_PREFIX, host_escaped, platform,
+                            region, value, i[value],
+                            timestamp))
+
+
+def get_host_data(account_hash, api_key, query=None):
+    query = urllib.urlencode(query)
+    url = '/accounts/{account_hash}/analytics/transfer?{query}'.format(
+        account_hash=account_hash, query=query)
+    hosts_data = get_data(url, api_key)['series']
+    return hosts_data
 
 
 def get_data(highwinds_url, api_key):
@@ -151,29 +162,25 @@ def get_data(highwinds_url, api_key):
     return json.loads(f.read())
 
 
-def get_services(account_hash, api_key):
-    """ query the services api and return a dictionary containing the
-        service name and the service id"""
-    service_data = get_data("/accounts/" + account_hash +
-                            "/hosts?recursive=&categories=", api_key)
-    all_services = {}
-    for service in service_data[u'list']:
-        all_services[service['name']] = service['hashCode']
+def get_hosts(account_hash, api_key):
+    """ query the hosts api and return a dictionary containing the
+        host name and the host id"""
+    host_data = get_data("/accounts/" + account_hash + "/hosts", api_key)
+    return {h['hashCode']: h['name'] for h in host_data['list']}
 
-    return all_services
+
+def get_host_by_name(host_name, account_hash, api_key):
+    url = '/accounts/{:s}/search?search={:s}'.format(account_hash, host_name)
+    host = get_data(url, api_key)
+    if host['hosts'] and host['hosts'][0]:
+        host = host['hosts'][0]
+        return {'id': host['hostHash'], 'name': host['name']}
 
 
 def get_regions(api_key):
     """ query the regions api and return a list of them """
-    try:
-        regions = []
-        for i in get_data("/billingRegions", api_key)[u'list']:
-            regions.append(i['code'])
-    except:
-        # if the api is not available return a default set of regions
-        return [u'oc', u'us', u'sa', u'as']
-
-    return regions
+    region_data = get_data("/billingRegions", api_key)['list']
+    return [r['code'] for r in region_data]
 
 
 def get_date_and_time(seconds=None):
