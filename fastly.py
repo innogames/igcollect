@@ -5,12 +5,12 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import sys
+import argparse
 import json
+import sys
+import time
 import urllib
 import urllib2
-import argparse
-import time
 
 GRAPHITE_PREFIX = 'cdn.fastly'
 FASTLY_BASE_URL = 'https://api.fastly.com'
