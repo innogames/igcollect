@@ -5,6 +5,8 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
+from __future__ import print_function
+
 import json
 import sys
 import time
@@ -40,10 +42,10 @@ def parse_args():
                         help="Shows you the currently available regions")
     parser.add_argument("-a", "--account-hash", dest="account_hash",
                         required=True,
-                        help="here you can provied the highwinds account hash "
+                        help="here you can provide the highwinds account hash "
                              "this will replace one contained in the script")
     parser.add_argument("-k", "--key", dest="api_key", required=True,
-                        help="here you can provied the highwinds API Key this "
+                        help="here you can provide the highwinds API Key this "
                              "will replace one contained in the script")
     return parser.parse_args()
 
@@ -117,14 +119,19 @@ def main(args):
 
     responses = zip(
         pairs,
-        grequests.map(get_host_data_request(account_hash, api_key, {
+        grequests.map((get_host_data_request(account_hash, api_key, {
             'startDate': start_time, 'endDate': end_time,
             'granularity': interval, 'platforms': platform,
             'billingRegions': region, 'groupBy': 'HOST',
-        }) for region, platform in pairs)
+        }) for region, platform in pairs), size=2)
     )
 
     for (region, platform), response in responses:
+        if not response:
+            print('NORESPONSE for region/platform {:s}/{:s}'.format(
+                region, platform), sys.stderr)
+            continue
+
         stats_series = response.json()['series']
         for stats_host in stats_series:
             host_id = stats_host['key']
