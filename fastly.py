@@ -12,6 +12,8 @@ import time
 import urllib
 import urllib2
 
+import grequests
+
 GRAPHITE_PREFIX = 'cdn.fastly'
 FASTLY_BASE_URL = 'https://api.fastly.com'
 AVG_KEYS = ('hit_ratio', 'hits_time', 'miss_time')
@@ -102,13 +104,21 @@ def main(args):
 
     string = GRAPHITE_PREFIX + '.{service}.{region}.{{value}}'
     regions = get_regions(api_key)
-    for region in regions:
-        stats_data = get_service_data(api_key, service, {
-            'region': region,
-            'from': start_time,
-            'to': end_time, 'by': interval})
 
-        for service, data in stats_data.items():
+    responses = zip(
+        regions,
+        grequests.map(get_service_data_request(api_key, service, {
+            'from': start_time, 'to': end_time,
+            'by': interval, 'region': region,
+        }) for region in regions)
+    )
+
+    for region, region_data in responses:
+        region_data = region_data.json()
+        if not region_data['data']:
+            continue
+
+        for service, data in region_data['data'].items():
             if service not in all_services:
                 continue
 
@@ -122,6 +132,15 @@ def main(args):
                     if not value:
                         continue
                     print(output.format(value=value))
+
+
+def get_service_data_request(api_key, service=None, query=None):
+    if not service:
+        url = '/stats'
+    else:
+        url = '/stats/service/{s}'.format(s=service)
+    return grequests.get(FASTLY_BASE_URL + url, headers={"Fastly-Key": api_key},
+                         params=query)
 
 
 def get_service_data(api_key, service=None, query=None):
