@@ -5,6 +5,8 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
+from __future__ import print_function
+
 import argparse
 import json
 import sys
@@ -107,13 +109,17 @@ def main(args):
 
     responses = zip(
         regions,
-        grequests.map(get_service_data_request(api_key, service, {
+        grequests.map((get_service_data_request(api_key, service, {
             'from': start_time, 'to': end_time,
             'by': interval, 'region': region,
-        }) for region in regions)
+        }) for region in regions), size=2)
     )
 
     for region, region_data in responses:
+        if not region_data:
+            print('NORESPONSE for region {:s}'.format(region), sys.stderr)
+            continue
+
         region_data = region_data.json()
         if not region_data['data']:
             continue
