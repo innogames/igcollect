@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# logfile_hits.py
+# logfile_schema.py
 #
 # Copyright (c) 2016, InnoGames GmbH
 #
@@ -48,7 +48,7 @@ def main():
     errors_unique = 0
     timeshift = get_datetime_timeshift(args.timeshift)
 
-    logging.getLogger().debug('matchings logs since %s', timeshift)
+    logging.getLogger().debug('matchings logs since %s', str(timeshift))
 
     if isfile(expanduser(args.file)):
         with open(args.file, mode='r') as f:
@@ -57,7 +57,7 @@ def main():
             # timeshift is exceeded so that we do not have to parse the
             # complete file every run.
             for line in f:
-                logging.getLogger().debug('parsing line %s', line)
+                logging.getLogger().debug('parsing line %s', str(line))
                 time_string, message_string = get_datetime_and_message(
                     line,
                     args.time_regex,
@@ -77,19 +77,19 @@ def main():
                         ).hexdigest()
                         logging.getLogger().debug(
                             'hash for message is %s',
-                            message_hash
+                            str(message_hash)
                         )
 
                         if message_hash not in errors:
                             logging.getLogger().debug(
                                 'new message %s',
-                                message_hash
+                                str(message_hash)
                             )
                             errors[message_hash] = 1
                         else:
                             logging.getLogger().debug(
                                 'found message %s',
-                                message_hash
+                                str(message_hash)
                             )
                             errors[message_hash] += 1
 
@@ -166,34 +166,33 @@ def get_datetime_and_message(line, time_regex, time_format, message_regex):
 
     logging.getLogger().debug(
         'searching for regex %s in %s',
-        time_regex,
-        line
+        str(time_regex),
+        str(line)
     )
     time_match = re.search(time_regex, line)
     if time_match and len(time_match.groups()):
         raw_string = time_match.group(0)
-        logging.getLogger().debug('match group is %s', raw_string)
+        logging.getLogger().debug('match group is %s', str(raw_string))
         try:
             time_string = datetime.datetime.strptime(raw_string, time_format)
-            logging.getLogger().debug('parsed time is %s', time_string)
+            logging.getLogger().debug('parsed time is %s', str(time_string))
         except ValueError:
             logging.getLogger().error(
-                'can not parse time %s with time regex {1}',
-                raw_string,
-                time_format
-            )
+                'can not parse time {0} with time regex {1}'.format(
+                    str(raw_string), str(time_format)
+            ))
 
         # makes only sense to continue and parse message_string fi we have a
         # time_string otherwise we could not compare it to timeshift.
         logging.getLogger().debug(
             'searching for regex %s in %s',
-            message_regex,
-            line
+            str(message_regex),
+            str(line)
         )
         message_match = re.search(message_regex, line)
         if message_match and len(message_match.groups()):
             message_string = message_match.group(0)
-            logging.getLogger().debug('match group is %s', message_string)
+            logging.getLogger().debug('match group is %s', str(message_string))
 
     return time_string, message_string
 
