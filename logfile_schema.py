@@ -48,7 +48,7 @@ def main():
     errors_unique = 0
     timeshift = get_datetime_timeshift(args.timeshift)
 
-    logging.getLogger().debug('matchings logs since %s', str(timeshift))
+    logging.getLogger().debug('matchings logs since %s', timeshift)
 
     if isfile(expanduser(args.file)):
         with open(args.file, mode='r') as f:
@@ -57,7 +57,7 @@ def main():
             # timeshift is exceeded so that we do not have to parse the
             # complete file every run.
             for line in f:
-                logging.getLogger().debug('parsing line %s', str(line))
+                logging.getLogger().debug('parsing line %s', line)
                 time_string, message_string = get_datetime_and_message(
                     line,
                     args.time_regex,
@@ -76,20 +76,17 @@ def main():
                             message_string.encode('utf-8')
                         ).hexdigest()
                         logging.getLogger().debug(
-                            'hash for message is %s',
-                            str(message_hash)
+                            'hash for message is %s', message_hash
                         )
 
                         if message_hash not in errors:
                             logging.getLogger().debug(
-                                'new message %s',
-                                str(message_hash)
+                                'new message %s', message_hash
                             )
                             errors[message_hash] = 1
                         else:
                             logging.getLogger().debug(
-                                'found message %s',
-                                str(message_hash)
+                                'found message %s', message_hash
                             )
                             errors[message_hash] += 1
 
@@ -98,19 +95,19 @@ def main():
         errors_total += matches
 
     if args.verbose:
-        print('{0} unique errors'.format(errors_unique))
-        print('{0} errors total'.format(errors_total))
-        print('timeshift {0}'.format(timeshift))
+        print('{} unique errors'.format(errors_unique))
+        print('{} errors total'.format(errors_total))
+        print('timeshift {}'.format(timeshift))
     else:
         timestamp = str(int(time()))
         hostname = node().replace('.', '_').lower()
         filename = args.file.replace('.', '_').lower().rsplit('/').pop()
-        metric_path = 'servers.{0}.logs.{1}'.format(hostname, filename)
+        metric_path = 'servers.{}.logs.{}'.format(hostname, filename)
 
         if args.total:
-            print('{0} {1} {2}'.format(metric_path, errors_total, timestamp))
+            print('{} {} {}'.format(metric_path, errors_total, timestamp))
         if args.unique:
-            print('{0} {1} {2}'.format(metric_path, errors_unique, timestamp))
+            print('{} {} {}'.format(metric_path, errors_unique, timestamp))
 
 
 def parse_args():
@@ -165,34 +162,30 @@ def get_datetime_and_message(line, time_regex, time_format, message_regex):
     message_string = None
 
     logging.getLogger().debug(
-        'searching for regex %s in %s',
-        str(time_regex),
-        str(line)
+        'searching for regex %s in %s', time_regex, line
     )
     time_match = re.search(time_regex, line)
     if time_match and len(time_match.groups()):
         raw_string = time_match.group(0)
-        logging.getLogger().debug('match group is %s', str(raw_string))
+        logging.getLogger().debug('match group is %s', raw_string)
         try:
             time_string = datetime.datetime.strptime(raw_string, time_format)
-            logging.getLogger().debug('parsed time is %s', str(time_string))
+            logging.getLogger().debug('parsed time is %s', time_string)
         except ValueError:
             logging.getLogger().error(
-                'can not parse time {0} with time regex {1}'.format(
-                    str(raw_string), str(time_format)
-            ))
+                'can not parse time %s with time regex %s', raw_string, 
+                time_format
+            )
 
         # makes only sense to continue and parse message_string fi we have a
         # time_string otherwise we could not compare it to timeshift.
         logging.getLogger().debug(
-            'searching for regex %s in %s',
-            str(message_regex),
-            str(line)
+            'searching for regex %s in %s', message_regex, line
         )
         message_match = re.search(message_regex, line)
         if message_match and len(message_match.groups()):
             message_string = message_match.group(0)
-            logging.getLogger().debug('match group is %s', str(message_string))
+            logging.getLogger().debug('match group is %s', message_string)
 
     return time_string, message_string
 
