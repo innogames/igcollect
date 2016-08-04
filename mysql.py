@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# igcollect - Mysql Status "show status"
+# igcollect - Mysql Status
 #
 # Copyright (c) 2016, InnoGames GmbH
 #
