@@ -10,13 +10,18 @@ import socket
 import MySQLdb
 
 hostname = socket.gethostname().replace(".", "_")
-
-db = MySQLdb.connect(host = 'localhost')
-cur = db.cursor()
-cur.execute("show status")
 now =  str(int(time.time()))
 
+db = MySQLdb.connect(host = 'localhost', read_default_file='/etc/mysql/my.cnf')
+cur = db.cursor()
+
+# Check for global status
+cur.execute("show global status")
 for row in cur.fetchall():
     if row[1].isdigit():
-      print "servers.{0}.software.mysql.status.{1} {2} {3}".format(hostname, row[0], row[1], now)
-   
+        print "servers.{0}.software.mysql.status.{1} {2} {3}".format(hostname, row[0], row[1], now)
+
+cur.execute("show variables")
+for row in cur.fetchall():
+    if row[1].isdigit():
+        print "servers.{0}.software.mysql.variables.{1} {2} {3}".format(hostname, row[0], row[1], now)
