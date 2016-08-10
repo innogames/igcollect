@@ -12,7 +12,7 @@ import MySQLdb
 hostname = socket.gethostname().replace(".", "_")
 now =  str(int(time.time()))
 
-db = MySQLdb.connect(host = 'localhost', read_default_file='/etc/mysql/my.cnf')
+db = MySQLdb.connect(user = 'root', host = 'localhost', read_default_file='/etc/mysql/my.cnf')
 cur = db.cursor()
 
 # Check for global status
