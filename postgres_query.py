@@ -37,6 +37,11 @@ def main(prefix, dbname, queries):
     now = str(int(time.time()))
 
     with psycopg2.connect(database=dbname) as conn:
+        conn.set_session(
+            isolation_level=psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE,
+            readonly=True,
+        )
+
         for query in queries:
             for line in execute(conn, query):
                 for key, value in line.items():
