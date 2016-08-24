@@ -6,13 +6,22 @@
 #
 
 from __future__ import print_function
-import fcntl
 import urllib2
 import socket
 import time
-import sys
 
-def main():
+from argparse import ArgumentParser
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--host', default='localhost')
+    parser.add_argument('--url', default='http://localhost/nginx_status')
+
+    return vars(parser.parse_args())
+
+
+def main(host, url):
     """The main program"""
 
     hostname = socket.gethostname().replace('.', '_')
@@ -21,8 +30,8 @@ def main():
 
 
     #Get information from stub_status page
-    headers = { "Host": "igsoftware_nginx" }
-    f = urllib2.Request("http://127.0.0.1/nginx_status", headers=headers)
+    headers = {"Host": host}
+    f = urllib2.Request(url, headers=headers)
     response = urllib2.urlopen(f)
     s = response.read().splitlines()
     stub_status['active_connections']   = s[0].split(":")[1].strip() #current active connections
@@ -40,5 +49,6 @@ def main():
     for key, value in stub_status.items():
         print(template.format(key, value, now))
 
+
 if __name__ == "__main__":
-    main()
+    main(**parse_args())
