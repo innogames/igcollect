@@ -27,13 +27,13 @@ for row in cur.fetchall():
         print "servers.{0}.software.mysql.variables.{1} {2} {3}".format(hostname, row[0], row[1], now)
 
 # Check information_schema tables
-columns = [
-    'table_schema', 'table_name', 'avg_row_length', 'data_length', 'max_data_length',
-    'index_length', 'data_free'
-]
-query = 'select ' + ', '.join(columns) + ' from information_schema.tables;'
+columns = (
+    'table_schema', 'table_name', 'avg_row_length', 'data_length',
+    'max_data_length', 'index_length', 'data_free'
+)
+query = 'select ' + ', '.join(columns) + ' from information_schema.tables'
 cur.execute(query)
 for row in cur.fetchall():
-    for i in range(2,len(columns)):
+    for i, column in enumerate(columns[2:], start=2):
         print "servers.{0}.software.mysql.information_schema.tables.{1}.{2}.{3} {4} {5}".format(
-            hostname, row[0], row[1].lower(), columns[i], row[i], now)
+            hostname, row[0], row[1].lower(), column, row[i], now)
