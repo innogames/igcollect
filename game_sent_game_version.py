@@ -6,53 +6,38 @@
 #
 
 import os
-import re
-import socket
+import time
 
-# All possible revision files for all games.
-revision_file = [
-    '/www/ds/revision',
-    '/www/grepo/branch',
-    '/www/foe/version',
-    '/www/onyx/branch',
-]
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='game.ds.xx.xx1.version')
+    parser.add_argument('--filename', default='/www/ds/revision')
 
-if __name__ == '__main__':
-    # Game name can be found from hostname, I think.
-    hostname = socket.gethostname()
+    return vars(parser.parse_args())
 
-    # Hostname suffix should be the shortcode.
-    game_shortcode = hostname.split('.')[-1]
-
-    # Game market should be first two characters of hostname.
-    game_market = hostname[:2]
-
-    # World name should be first characters followed by numbers.
-    regex = re.search('^[a-z]+[0-9]+', hostname)
-    game_worldname = regex.group(0)
-
+def main(prefix, path):
     # If all goes well, this variable will be set to revision.
     revision = None
 
-    for filename in revision_file:
-        if os.path.exists(filename):
-            with open(filename, 'r') as fh:
-                revision = fh.readlines()[0]
+    if os.path.exists(filename):
+        with open(filename, 'r') as fh:
+            revision = fh.readlines()[0]
 
-                # For Tribalwars the version starts after the first space
-                if filename.startswith('/www/ds'):
-                    revision = revision.split(' ')[-1]
+            # If revision contains spaces, take last element.
+            if ' ' in revision:
+                revision = revision.split(' ')[-1]
 
-                # For Elvenar stip the 'v' from the beginning.
-                if filename.startswith('/www/onyx'):
-                    if revision.startswith('v'):
-                        revision = revision[1:]
+            # Strip leading 'v' from version string
+            if revision.startswith('v'):
+                revision = revision[1:]
+
+            # Replace all the dots.
+            revision = revision.replace('.', '_')
 
     if revision:
-        # Replace all the dots.
-        revision = revision.replace('.', '_')
-
         # Print data if revision was valid.
-        print 'games.{}.{}.{}.version.{}'.format(
-            game_shortcode, game_market, game_worldname, revision)
+        print('{}.{} 1 {}'.format(prefix, revision, int(time.time())))
+
+if __name__ == '__main__':
+    main(**parse_args())
 
