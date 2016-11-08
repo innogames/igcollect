@@ -13,7 +13,8 @@ factors = {
 'Intel(R) Xeon(R) CPU           L5640  @ 2.27GHz':1.0,
 'Intel(R) Xeon(R) CPU E5-2660 0 @ 2.20GHz'	 :1.2,
 'Intel(R) Xeon(R) CPU E5-2660 v2 @ 2.20GHz'	 :1.44,
-'Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz'	 :1.8
+'Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz'	 :1.8,
+'Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz'	 :1.8
 }
 cpufactor = 1.0
 
