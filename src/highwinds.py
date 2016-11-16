@@ -115,7 +115,7 @@ def main(args):
         (region, platform)
         for region in get_regions(api_key)
         for platform in PLATFORMS
-        ]
+    ]
 
     responses = zip(
         pairs,

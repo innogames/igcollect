@@ -5,7 +5,10 @@
 # Copyright (c) 2016 InnoGames GmbH
 #
 
-import socket, time, subprocess
+import socket
+import time
+import subprocess
+
 
 def main():
     redis_info = subprocess.Popen(('redis-cli', '-a', redis_pwd(), 'info'),
@@ -22,15 +25,16 @@ def main():
     timestamp = str(int(time.time()))
     template = 'servers.' + hostname + '.software.redis.{1} {2} ' + timestamp
     headers = (
-            'total_connections_received',
-            'total_commands_processed',
-            'keyspace_hits',
-            'keyspace_misses',
-            'used_memory',
-        )
+        'total_connections_received',
+        'total_commands_processed',
+        'keyspace_hits',
+        'keyspace_misses',
+        'used_memory',
+    )
 
     for metric in headers:
-        print(template.format(hostname,metric, redis_stats[metric]))
+        print(template.format(hostname, metric, redis_stats[metric]))
+
 
 def redis_pwd():
     '''Returns redis password '''

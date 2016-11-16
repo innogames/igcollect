@@ -145,8 +145,11 @@ def get_service_data_request(api_key, service=None, query=None):
         url = '/stats'
     else:
         url = '/stats/service/{s}'.format(s=service)
-    return grequests.get(FASTLY_BASE_URL + url, headers={"Fastly-Key": api_key},
-                         params=query)
+    return grequests.get(
+        FASTLY_BASE_URL + url,
+        headers={
+            "Fastly-Key": api_key},
+        params=query)
 
 
 def get_service_data(api_key, service=None, query=None):

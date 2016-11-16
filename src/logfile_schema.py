@@ -69,26 +69,26 @@ def main():
                     (time_string and message_string) and
                     (time_string >= timeshift)
                 ):
-                        logging.getLogger().debug(
-                            'message is in time range: evaluating'
-                        )
-                        message_hash = hashlib.md5(
-                            message_string.encode('utf-8')
-                        ).hexdigest()
-                        logging.getLogger().debug(
-                            'hash for message is %s', message_hash
-                        )
+                    logging.getLogger().debug(
+                        'message is in time range: evaluating'
+                    )
+                    message_hash = hashlib.md5(
+                        message_string.encode('utf-8')
+                    ).hexdigest()
+                    logging.getLogger().debug(
+                        'hash for message is %s', message_hash
+                    )
 
-                        if message_hash not in errors:
-                            logging.getLogger().debug(
-                                'new message %s', message_hash
-                            )
-                            errors[message_hash] = 1
-                        else:
-                            logging.getLogger().debug(
-                                'found message %s', message_hash
-                            )
-                            errors[message_hash] += 1
+                    if message_hash not in errors:
+                        logging.getLogger().debug(
+                            'new message %s', message_hash
+                        )
+                        errors[message_hash] = 1
+                    else:
+                        logging.getLogger().debug(
+                            'found message %s', message_hash
+                        )
+                        errors[message_hash] += 1
 
     errors_unique = len(errors)
     for matches in errors.values():
@@ -173,7 +173,7 @@ def get_datetime_and_message(line, time_regex, time_format, message_regex):
             logging.getLogger().debug('parsed time is %s', time_string)
         except ValueError:
             logging.getLogger().error(
-                'can not parse time %s with time regex %s', raw_string, 
+                'can not parse time %s with time regex %s', raw_string,
                 time_format
             )
 

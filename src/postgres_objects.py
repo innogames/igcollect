@@ -41,7 +41,8 @@ for database in user_databases:
 # Detailed relation size by database tables
 #
 for database in user_databases:
-    template = prefix + "db." + database + ".table.{0}.{1}.rel_size.{2} {3} {4}"
+    template = prefix + "db." + database + \
+        ".table.{0}.{1}.rel_size.{2} {3} {4}"
     query = """SELECT nspname, relname, fname,
                       pg_relation_size(pg_class.oid, fname) as rel_size
                FROM pg_class
@@ -97,7 +98,8 @@ for database in user_databases:
 # Indexes on database tables
 #
 for database in user_databases:
-    template = prefix + "db." + database + ".table.{0}.{1}.index.{2}.{3} {4} {5}"
+    template = prefix + "db." + database + \
+        ".table.{0}.{1}.index.{2}.{3} {4} {5}"
     query = """SELECT nspname, table_class.relname,
                       index_class.relname AS indexrelname,
                       index_class.relpages,
@@ -122,7 +124,8 @@ for database in user_databases:
 # IO statistics by user indexes on database tables
 #
 for database in user_databases:
-    template = prefix + "db." + database + ".table.{0}.{1}.index.{2}.statio.{3} {4} {5}"
+    template = prefix + "db." + database + \
+        ".table.{0}.{1}.index.{2}.statio.{3} {4} {5}"
     query = """SELECT schemaname, relname, indexrelname, idx_blks_read,
                       idx_blks_hit
                FROM pg_statio_user_indexes"""
@@ -142,7 +145,8 @@ for database in user_databases:
 # IO statistics by database sequences
 #
 for database in user_databases:
-    template = prefix + "db." + database + ".sequence.{0}.{1}.statio.{2} {3} {4}"
+    template = prefix + "db." + database + \
+        ".sequence.{0}.{1}.statio.{2} {3} {4}"
     query = """SELECT schemaname, relname, blks_read, blks_hit
                FROM pg_statio_all_sequences"""
     now = str(int(time.time()))

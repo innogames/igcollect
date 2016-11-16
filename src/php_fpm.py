@@ -17,15 +17,19 @@ import time
 
 from argparse import ArgumentParser
 
+
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='servers.{hostname}.software.php_fpm')
+    parser.add_argument(
+        '--prefix',
+        default='servers.{hostname}.software.php_fpm')
     parser.add_argument('--host', default='localhost')
     parser.add_argument('--address')
-    parser.add_argument('--location', default='/fpm-status') 
-    parser.add_argument('--pool', default='www') 
+    parser.add_argument('--location', default='/fpm-status')
+    parser.add_argument('--pool', default='www')
 
     return vars(parser.parse_args())
+
 
 def main(prefix, host, location, pool, address=None):
     """The main program"""

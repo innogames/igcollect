@@ -7,9 +7,12 @@
 
 from __future__ import print_function
 from socket import gethostname
-import time, sys
+import time
+import sys
 
 # utility to read and parse a comma delimited file (meminfo)
+
+
 def parse_split_file(filename):
     try:
         with open(filename, 'r') as f:
@@ -17,10 +20,12 @@ def parse_split_file(filename):
     except:
         sys.exit(1)
 
+
 def get_meminfo():
     lines = parse_split_file('/proc/meminfo')
     # turns ['SwapFree:', '100 kB'] into ('SwapFree', '102400')
-    return dict((key[:-1], ( 1024 * int(value.split()[0]))) for key, value in lines)
+    return dict((key[:-1], (1024 * int(value.split()[0])))
+                for key, value in lines)
 
 meminfo = get_meminfo()
 timestamp = str(int(time.time()))

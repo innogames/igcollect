@@ -6,12 +6,16 @@
 #
 
 from __future__ import print_function
-import socket, time, sys
+import socket
+import time
+import sys
+
 
 def main():
     try:
         with open('/proc/loadavg', 'r') as file_descriptor:
-            avg01, avg05, avg15 = file_descriptor.readline().strip().split(' ')[:3]
+            avg01, avg05, avg15 = file_descriptor.readline().strip().split(' ')[
+                :3]
     except:
         sys.exit(1)
 

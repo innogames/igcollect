@@ -5,7 +5,9 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import socket, time
+import socket
+import time
+
 
 def main():
     """The main program
@@ -16,48 +18,48 @@ def main():
 
     template = 'servers.{0}.software.beanstalkd.stats.{1} {2} {3}'
     metrics = (
-            'current-jobs-urgent',
-            'current-jobs-ready',
-            'current-jobs-reserved',
-            'current-jobs-delayed',
-            'current-jobs-buried',
-            'cmd-put',
-            'cmd-peek',
-            'cmd-peek-ready',
-            'cmd-peek-delayed',
-            'cmd-peek-buried',
-            'cmd-reserve',
-            'cmd-reserve-with-timeout',
-            'cmd-delete',
-            'cmd-release',
-            'cmd-use',
-            'cmd-watch',
-            'cmd-ignore',
-            'cmd-bury',
-            'cmd-kick',
-            'cmd-touch',
-            'cmd-stats',
-            'cmd-stats-job',
-            'cmd-stats-tube',
-            'cmd-list-tubes',
-            'cmd-list-tube-used',
-            'cmd-list-tubes-watched',
-            'cmd-pause-tube',
-            'job-timeouts',
-            'total-jobs',
-            'current-tubes',
-            'current-connections',
-            'current-producers',
-            'current-workers',
-            'current-waiting',
-            'total-connections',
-            'rusage-utime',
-            'rusage-stime',
-            'binlog-oldest-index',
-            'binlog-current-index',
-            'binlog-records-migrated',
-            'binlog-records-written',
-        )
+        'current-jobs-urgent',
+        'current-jobs-ready',
+        'current-jobs-reserved',
+        'current-jobs-delayed',
+        'current-jobs-buried',
+        'cmd-put',
+        'cmd-peek',
+        'cmd-peek-ready',
+        'cmd-peek-delayed',
+        'cmd-peek-buried',
+        'cmd-reserve',
+        'cmd-reserve-with-timeout',
+        'cmd-delete',
+        'cmd-release',
+        'cmd-use',
+        'cmd-watch',
+        'cmd-ignore',
+        'cmd-bury',
+        'cmd-kick',
+        'cmd-touch',
+        'cmd-stats',
+        'cmd-stats-job',
+        'cmd-stats-tube',
+        'cmd-list-tubes',
+        'cmd-list-tube-used',
+        'cmd-list-tubes-watched',
+        'cmd-pause-tube',
+        'job-timeouts',
+        'total-jobs',
+        'current-tubes',
+        'current-connections',
+        'current-producers',
+        'current-workers',
+        'current-waiting',
+        'total-connections',
+        'rusage-utime',
+        'rusage-stime',
+        'binlog-oldest-index',
+        'binlog-current-index',
+        'binlog-records-migrated',
+        'binlog-records-written',
+    )
     stats = [l.split(': ') for l in read_stats().splitlines()[2:-1]]
     hostname = [v for k, v in stats if k == 'hostname'][0].replace('.', '_')
     now = str(int(time.time()))
@@ -65,6 +67,7 @@ def main():
     for key, value in stats:
         if key in metrics:
             print(template.format(hostname, key, value, now))
+
 
 def read_stats():
     """Read the stats from the local Beanstalkd service

@@ -25,22 +25,29 @@ def main(host, url):
     """The main program"""
 
     hostname = socket.gethostname().replace('.', '_')
-    prefix = "servers."+ hostname +".software.nginx."
+    prefix = "servers." + hostname + ".software.nginx."
     stub_status = {}
 
-
-    #Get information from stub_status page
+    # Get information from stub_status page
     headers = {"Host": host}
     f = urllib2.Request(url, headers=headers)
     response = urllib2.urlopen(f)
     s = response.read().splitlines()
-    stub_status['active_connections']   = s[0].split(":")[1].strip() #current active connections
-    stub_status['accepted_connections'] = s[2].split()[0].strip()    #all accepted connections since server restart
-    stub_status['handled_connections']  = s[2].split()[1].strip()    #all connections that were processed
-    stub_status['handled_requests']     = s[2].split()[2].strip()    #all requests which were processed
-    stub_status['reading']              = s[3].split()[1].strip()    #current reading connections, reads request header
-    stub_status['writing']              = s[3].split()[3].strip()    #current writing connections, reads request body, processes request, or writes response to a client
-    stub_status['waiting']              = s[3].split()[5].strip()    #keep-alive connections, actually it is active - (reading + writing
+    stub_status['active_connections'] = s[0].split(
+        ":")[1].strip()  # current active connections
+    # all accepted connections since server restart
+    stub_status['accepted_connections'] = s[2].split()[0].strip()
+    # all connections that were processed
+    stub_status['handled_connections'] = s[2].split()[1].strip()
+    # all requests which were processed
+    stub_status['handled_requests'] = s[2].split()[2].strip()
+    # current reading connections, reads request header
+    stub_status['reading'] = s[3].split()[1].strip()
+    # current writing connections, reads request body, processes request, or
+    # writes response to a client
+    stub_status['writing'] = s[3].split()[3].strip()
+    # keep-alive connections, actually it is active - (reading + writing
+    stub_status['waiting'] = s[3].split()[5].strip()
 
     template = prefix + "stub_status.{0} {1} {2}"
 
