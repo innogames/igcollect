@@ -21,7 +21,7 @@ def main():
 
     now = str(int(time.time()))
     hostname = socket.gethostname().replace('.', '_')
-    template = 'servers.' + hostname + '.system.load.{0} {1} ' + now
+    template = 'servers.' + hostname + '.system.load.{} {} ' + now
 
     print(template.format('avg01', avg01))
     print(template.format('avg05', avg05))

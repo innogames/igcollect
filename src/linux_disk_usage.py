@@ -26,7 +26,7 @@ def main():
     now = str(int(time.time()))
     hostname = socket.gethostname().replace('.', '_')
 
-    template = 'servers.' + hostname + '.system.fs.{0}.{1} {2} ' + now
+    template = 'servers.' + hostname + '.system.fs.{}.{} {} ' + now
 
     for mp in mountpoints:
         try:

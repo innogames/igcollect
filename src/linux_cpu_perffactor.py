@@ -21,16 +21,15 @@ factors = {
 cpufactor = 1.0
 
 try:
-    cd = open('/proc/cpuinfo', 'r')
-    cpu_data = cd.readlines(1024)
-    cd.close()
+    with open('/proc/cpuinfo') as fd:
+        cpu_data = fd.readlines(1024)
 except:
     sys.exit(1)
 
 for line in cpu_data:
-    l = line.split(':', 1)[1].strip()
-    if l in factors:
-        cpufactor = factors[l]
+    factor = line.split(':', 1)[1].strip()
+    if factor in factors:
+        cpufactor = factors[factor]
         break
 
 graphite_data = ''

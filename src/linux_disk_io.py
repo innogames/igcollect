@@ -5,18 +5,42 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-from __future__ import print_function
 import socket
 import time
 import sys
 
 
-def resolve_to_vserver(dm_name=False):
-    ''' returns the vserver name for a given dm_device'''
+def main():
+    hostname = socket.gethostname().replace('.', '_')
+    now = str(int(time.time()))
+    sector_size = 512
+    dd = get_diskstats_dict()
+    metric_names = (
+        ('sec_read', 'bytesRead'),
+        ('sec_written', 'bytesWrite'),
+        ('reads', 'iopsRead'),
+        ('writes', 'iopsWrite'),
+        ('ms_read', 'ioTimeMsRead'),
+        ('ms_written', 'ioTimeMsWrite'),
+        ('ms_io', 'ioTimeMs'),
+        ('cur_iops', 'ioOpsInProgress'),
+    )
+    for disk in dd:
+        # Filter for only normal disks and partitions
+        if not any(disk.startswith(p) for p in ('sd', 'hd', 'xvd', 'vd')):
+            continue
+        for key, name in metric_names:
+            value = int(dd[disk][key])
+            if key.startswith('sec_'):
+                value *= sector_size
+            print(
+                'servers.{}.system.disk.{}.{} {} {}'
+                .format(hostname, disk, name, value, now)
+            )
 
 
 def get_diskstats_dict():
-    ''' returns a dictionary made from /proc/diskstats '''
+    """Return a dictionary made from /proc/diskstats"""
 
     try:
         dsd = open('/proc/diskstats', 'r')
@@ -31,47 +55,19 @@ def get_diskstats_dict():
               'writes', 'writes_merged', 'sec_written', 'ms_written',
               'cur_iops', 'ms_io', 'weighted_ms_io']
 
-    header.pop(2)  # just to be able to have also the name in the header
+    header.pop(2)  # Just to be able to have also the name in the header
 
     for line in diskstats_data:
-        ''' here we have to handle some kind of disk
-        first the name than the counters as mentioned
-        in the header'''
-
+        # Here we have to handle some kind of disk first the name than
+        # the counters as mentioned in the header.
         x = line.strip().split()
         disk_name = x.pop(2)
         diskstats_dict[disk_name] = {}
-        for i in header:
-            diskstats_dict[disk_name][i] = x.pop(0)
+        for name in header:
+            diskstats_dict[disk_name][name] = x.pop(0)
 
-    return(diskstats_dict)
+    return diskstats_dict
 
-graphite_data = ''
-hostname = socket.gethostname().replace('.', '_')
-now = str(int(time.time()))
-sector_size = 512
 
-dd = get_diskstats_dict()
-
-for disk in dd:
-    # filter for only normal disks and partitions
-    if (disk.startswith('sd') or disk.startswith('hd')
-            or disk.startswith('xvd') or disk.startswith('vd')):
-        graphite_data += 'servers.%s.system.disk.%s.bytesRead %s %s\n' % (
-            hostname, disk, str(int(dd[disk]['sec_read']) * sector_size), now)
-        graphite_data += 'servers.%s.system.disk.%s.bytesWrite %s %s\n' % (
-            hostname, disk, str(int(dd[disk]['sec_written']) * sector_size), now)
-        graphite_data += 'servers.%s.system.disk.%s.iopsRead %s %s\n' % (
-            hostname, disk, str(dd[disk]['reads']), now)
-        graphite_data += 'servers.%s.system.disk.%s.iopsWrite %s %s\n' % (
-            hostname, disk, str(dd[disk]['writes']), now)
-        graphite_data += 'servers.%s.system.disk.%s.ioTimeMsRead %s %s\n' % (
-            hostname, disk, str(dd[disk]['ms_read']), now)
-        graphite_data += 'servers.%s.system.disk.%s.ioTimeMsWrite %s %s\n' % (
-            hostname, disk, str(dd[disk]['ms_written']), now)
-        graphite_data += 'servers.%s.system.disk.%s.ioTimeMs %s %s\n' % (
-            hostname, disk, str(dd[disk]['ms_io']), now)
-        graphite_data += 'servers.%s.system.disk.%s.ioOpsInProgress %s %s\n' % (
-            hostname, disk, str(dd[disk]['cur_iops']), now)
-
-print(graphite_data)
+if __name__ == '__main__':
+    main()

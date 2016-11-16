@@ -10,13 +10,12 @@ from socket import gethostname
 import time
 import sys
 
-# utility to read and parse a comma delimited file (meminfo)
-
 
 def parse_split_file(filename):
+    """Utility to read and parse a comma delimited file"""
     try:
-        with open(filename, 'r') as f:
-            return [line.strip().split(None, 1) for line in f]
+        with open(filename) as fd:
+            return [line.strip().split(None, 1) for line in fd]
     except:
         sys.exit(1)
 
@@ -24,8 +23,9 @@ def parse_split_file(filename):
 def get_meminfo():
     lines = parse_split_file('/proc/meminfo')
     # turns ['SwapFree:', '100 kB'] into ('SwapFree', '102400')
-    return dict((key[:-1], (1024 * int(value.split()[0])))
-                for key, value in lines)
+    return dict(
+        (key[:-1], 1024 * int(value.split()[0])) for key, value in lines
+    )
 
 meminfo = get_meminfo()
 timestamp = str(int(time.time()))
@@ -40,11 +40,11 @@ meminfo['Apps'] = (meminfo['MemTotal'] - meminfo['MemFree']
                                        - meminfo['SwapCached'])
 meminfo['Swap'] = meminfo['SwapTotal'] - meminfo['SwapFree']
 
-# Define desired fileds for ouput
+# Define desired fields for output
 used_fields = ['Apps', 'PageTables', 'SwapCached', 'VmallocUsed', 'Slab',
                'Cached', 'Buffers', 'MemFree', 'Swap', 'Committed_AS',
                'Mapped', 'Active', 'Inactive']
 
-template = "servers.{0}.system.memory.{1} {2} {3}"
+template = "servers.{}.system.memory.{} {} {}"
 for field in used_fields:
     print(template.format(hostname, field, meminfo[field], timestamp))
