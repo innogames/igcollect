@@ -5,63 +5,68 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import time
-import sys
-import urllib
-import argparse
-from socket import gethostname
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-u",
-    "--user",
-    dest="http_user",
-    type=str,
-    required=True,
-    help="the http user name to authenticate")
-parser.add_argument(
-    "-p",
-    "--pass",
-    dest="http_pass",
-    type=str,
-    required=True,
-    help="the http password to authenticate")
-args = parser.parse_args()
+from time import time
+from urllib import urlopen
+from argparse import ArgumentParser
 
 
-artfiles_url = 'https://%s:%s@dcp.c.artfiles.de/api/stats/get_estats.html' % (
-    args.http_user, args.http_pass)
-data = urllib.urlopen(artfiles_url)
-csv = data.readlines()
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument(
+        "-u",
+        "--user",
+        dest="http_user",
+        type=str,
+        required=True,
+        help="the http user name to authenticate")
+    parser.add_argument(
+        "-p",
+        "--pass",
+        dest="http_pass",
+        type=str,
+        required=True,
+        help="the http password to authenticate")
+    return parser.parse_args()
 
-now = str(int(time.time()))
 
-graphite = ""
-for line in csv:
-    if line.startswith('"level3"') or line.startswith('"w408'):
-        dc, rack, pdu_nr, maxcur, measurementtype, maxval_watt, curval = line.split(
-            ',')
-        dc = dc.strip('"').replace('/', '_')
-        rack = rack.strip('"').translate(None, '/')
-        pdu_nr = pdu_nr.strip('"')
+def main():
+    args = parse_args()
+    artfiles_url = (
+        'https://{}:{}@dcp.c.artfiles.de/api/stats/get_estats.html'
+        .format(args.http_user, args.http_pass)
+    )
+    data = urlopen(artfiles_url)
+    template = 'powerline.{}.{}.{}.{} {} ' + str(int(time()))
+    for csv in data.readlines():
+        if csv.startswith('"level3"') or csv.startswith('"w408'):
+            parse_and_print(template, csv)
 
-        if maxcur == '"16A"':
-            graphite += 'powerline.' + dc + '.' + rack + '.' + \
-                pdu_nr + '.max ' + '16.00 ' + str(now) + '\n'
-        elif maxcur == '"10A"':
-            graphite += 'powerline.' + dc + '.' + rack + '.' + \
-                pdu_nr + '.max ' + '10.00 ' + str(now) + '\n'
-        elif maxcur == '"redundant"':
-            graphite += 'powerline.' + dc + '.' + rack + '.' + \
-                pdu_nr + '.max ' + '20.00 ' + str(now) + '\n'
 
-        if measurementtype == '"ampere"':
-            ampere = curval.translate(None, '" A\n')
-            graphite += 'powerline.' + dc + '.' + rack + '.' + \
-                pdu_nr + '.ampre ' + str(ampere) + ' ' + str(now) + '\n'
-        if measurementtype == '"kwh"':
-            kwh = maxval_watt.translate(None, '" kWh\n')
-            graphite += 'powerline.' + dc + '.' + rack + '.' + \
-                pdu_nr + '.kwh ' + str(kwh) + ' ' + str(now) + '\n'
+def parse_and_print(template, csv):
+    values = [v.strip('\n "') for v in csv.split(',')]
+    dc = values[0].replace('/', '_')
+    rack = values[1].translate(None, '/')
+    pdu_nr = values[2]
+    maxcur = values[3]
+    measurement_type = values[4]
+    maxval_watt = values[5]
+    curval = values[6]
 
-print graphite
+    if maxcur == '10A':
+        print(template.format(dc, rack, pdu_nr, 'max', '10.00'))
+    elif maxcur == '16A':
+        print(template.format(dc, rack, pdu_nr, 'max', '16.00'))
+    elif maxcur == 'redundant':
+        print(template.format(dc, rack, pdu_nr, 'max', '20.00'))
+
+    if measurement_type == 'ampere':
+        ampere = curval.translate(None, ' A')
+        print(template.format(dc, rack, pdu_nr, 'ampre', ampere))
+
+    if measurement_type == 'kwh':
+        kwh = maxval_watt.translate(None, ' kWh')
+        print(template.format(dc, rack, pdu_nr, 'kwh', kwh))
+
+
+if __name__ == '__main__':
+    main()
