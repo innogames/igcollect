@@ -9,19 +9,15 @@ from __future__ import print_function
 import socket
 import time
 import os
-import sys
 
 
 def main():
     mountpoints = []
-    try:
-        with open('/proc/mounts', 'r') as file_descriptor:
-            for line in file_descriptor.readlines():
-                a, mountpoint, fstype, a = line.split(' ', 3)
-                if fstype in ['ext2', 'ext3', 'ext4', 'xfs']:
-                    mountpoints.append(mountpoint)
-    except:
-        sys.exit(1)
+    with open('/proc/mounts', 'r') as file_descriptor:
+        for line in file_descriptor.readlines():
+            a, mountpoint, fstype, a = line.split(' ', 3)
+            if fstype in ['ext2', 'ext3', 'ext4', 'xfs']:
+                mountpoints.append(mountpoint)
 
     now = str(int(time.time()))
     hostname = socket.gethostname().replace('.', '_')
@@ -29,11 +25,7 @@ def main():
     template = 'servers.' + hostname + '.system.fs.{}.{} {} ' + now
 
     for mp in mountpoints:
-        try:
-            stat = os.statvfs(mp)
-        except:
-            sys.exit(1)
-
+        stat = os.statvfs(mp)
         used = stat.f_frsize * stat.f_blocks - stat.f_bfree * stat.f_bsize
         size = stat.f_frsize * stat.f_blocks
 

@@ -7,7 +7,6 @@
 
 import socket
 import time
-import sys
 
 
 def main():
@@ -46,12 +45,9 @@ def main():
 
 def get_cpustats_dict(header):
     ''' returns a dictionary made from /proc/diskstats '''
-    try:
-        sd = open('/proc/stat', 'r')
-        stat_data = sd.readlines(16384)
-        sd.close()
-    except:
-        sys.exit(1)
+    sd = open('/proc/stat', 'r')
+    stat_data = sd.readlines(16384)
+    sd.close()
 
     total_dict = {}
     uptime = 0

@@ -6,7 +6,6 @@
 #
 
 import time
-import sys
 from socket import gethostname
 
 
@@ -27,11 +26,8 @@ def main():
 
 def parse_split_file(filename):
     """Utility to read and parse a comma delimited file"""
-    try:
-        with open(filename) as fd:
-            return [line.strip().split(None, 1) for line in fd]
-    except:
-        sys.exit(1)
+    with open(filename) as fd:
+        return [line.strip().split(None, 1) for line in fd]
 
 
 def get_numa_nodes():
@@ -42,7 +38,7 @@ def get_numa_nodes():
     # Range of nodes
     if '-' not in line:
         # We don't need stats for servers with only one node
-        sys.exit(0)
+        return []
 
     # Max is exclusive in range so plus 1
     return range(0, int(line.split('-')[1]) + 1)

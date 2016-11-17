@@ -7,7 +7,6 @@
 
 import socket
 import time
-import sys
 
 
 def main():
@@ -41,13 +40,9 @@ def main():
 
 def get_diskstats_dict():
     """Return a dictionary made from /proc/diskstats"""
-
-    try:
-        dsd = open('/proc/diskstats', 'r')
-        diskstats_data = dsd.readlines(1024)
-        dsd.close()
-    except:
-        sys.exit(1)
+    dsd = open('/proc/diskstats', 'r')
+    diskstats_data = dsd.readlines(1024)
+    dsd.close()
 
     diskstats_dict = {}
     header = ['major', 'minor', 'name',

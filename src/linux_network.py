@@ -8,7 +8,6 @@
 from __future__ import print_function
 import socket
 import time
-import sys
 
 
 def main():
@@ -43,12 +42,8 @@ def main():
 def get_netdev_dict():
     """Return a dictionary made from /proc/net/dev"""
 
-    try:
-        nd = open('/proc/net/dev', 'r')
+    with open('/proc/net/dev', 'r') as nd:
         netdev_data = nd.readlines(1024)
-        nd.close()
-    except:
-        sys.exit(1)
 
     netdev_dict = {}
     header = []

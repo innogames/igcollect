@@ -8,7 +8,6 @@
 from __future__ import print_function
 import socket
 import time
-import sys
 
 factors = {
     'Intel(R) Xeon(R) CPU           L5520  @ 2.27GHz': 0.8,
@@ -20,11 +19,8 @@ factors = {
 }
 cpufactor = 1.0
 
-try:
-    with open('/proc/cpuinfo') as fd:
-        cpu_data = fd.readlines(1024)
-except:
-    sys.exit(1)
+with open('/proc/cpuinfo') as fd:
+    cpu_data = fd.readlines(1024)
 
 for line in cpu_data:
     factor = line.split(':', 1)[1].strip()

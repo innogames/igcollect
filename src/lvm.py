@@ -7,27 +7,16 @@
 
 from socket import gethostname
 import time
-import sys
-import subprocess
+from subprocess import check_output
 
 
 def main():
-    try:
-        vgdisplay = subprocess.Popen(
-            '/sbin/vgdisplay -c',
-            stdout=subprocess.PIPE,
-            shell=True,
-            stdin=subprocess.PIPE,
-            close_fds=True,
-        ).stdout.readlines()
-    except:
-        sys.exit(1)
-
+    vgdisplay = check_output(('/sbin/vgdisplay', '-c'))
     template = 'servers.{}.system.lvm.{}.{} {} {}'
     hostname = gethostname().replace('.', '_')
     timestamp = str(int(time.time()))
 
-    for line in vgdisplay:
+    for line in vgdisplay.splitlines():
         # 1     2 3 4 5 6 7 8 9 0 1 12      13      4 5 16      7
         line_split = line.strip().split(':')
         assert len(line_split) == 17
