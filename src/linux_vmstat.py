@@ -5,13 +5,13 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import time
-from socket import gethostname
 from argparse import ArgumentParser
+from time import time
 
 
 def parse_args():
     parser = ArgumentParser(prog='linux_vmstat.py')
+    parser.add_argument('--prefix', default='linux.vmstat')
     parser.add_argument(
         '--fields',
         dest='fields',
@@ -25,12 +25,9 @@ def parse_args():
 def main():
     args = parse_args()
     vmstat = get_vmstat()
-    timestamp = int(time.time())
-    hostname = gethostname().replace('.', '_')
-
-    template = "servers.{}.system.vmstat.{} {} {}"
+    template = args.prefix + '{} {} ' + str(int(time()))
     for field in args.fields:
-        print(template.format(hostname, field, vmstat[field], timestamp))
+        print(template.format(field, vmstat[field]))
 
 
 def parse_split_file(filename):

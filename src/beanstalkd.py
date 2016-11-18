@@ -5,8 +5,15 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import socket
-import time
+from argparse import ArgumentParser
+from socket import socket, AF_INET, SOCK_STREAM
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='beanstalkd')
+    return parser.parse_args()
 
 
 def main():
@@ -15,8 +22,8 @@ def main():
     It gets the statistics from the local Beanstalkd service and prints them
     in the format of the Graphite.
     """
-
-    template = 'servers.{0}.software.beanstalkd.stats.{1} {2} {3}'
+    args = parse_args()
+    template = args.prefix + '.stats.{} {} ' + str(int(time()))
     metrics = (
         'current-jobs-urgent',
         'current-jobs-ready',
@@ -61,12 +68,10 @@ def main():
         'binlog-records-written',
     )
     stats = [l.split(': ') for l in read_stats().splitlines()[2:-1]]
-    hostname = [v for k, v in stats if k == 'hostname'][0].replace('.', '_')
-    now = str(int(time.time()))
 
     for key, value in stats:
         if key in metrics:
-            print(template.format(hostname, key, value, now))
+            print(template.format(key, value))
 
 
 def read_stats():
@@ -85,8 +90,7 @@ def read_stats():
     the program wouldn't hang waiting for the server to respond.  We will use
     2 second timeout to achieve this.
     """
-
-    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    conn = socket(AF_INET, SOCK_STREAM)
     try:
         conn.settimeout(2)
         conn.connect(('localhost', 11300))
@@ -94,6 +98,7 @@ def read_stats():
         return conn.recv(4096)
     finally:
         conn.close()
+
 
 if __name__ == '__main__':
     main()

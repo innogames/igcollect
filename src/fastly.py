@@ -5,18 +5,15 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-from __future__ import print_function
-
-import argparse
+from argparse import ArgumentParser
 import json
 import sys
-import time
+from time import time
 import urllib
 import urllib2
 
 import grequests
 
-GRAPHITE_PREFIX = 'cdn.fastly'
 FASTLY_BASE_URL = 'https://api.fastly.com'
 AVG_KEYS = ('hit_ratio', 'hits_time', 'miss_time')
 SUM_KEYS = (
@@ -27,7 +24,8 @@ SUM_KEYS = (
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='cdn.fastly')
     parser.add_argument('-k', '--key', dest='api_key', required=True,
                         help='here you can provided the Fastly API Key this '
                              'will replace one contained in the script')
@@ -68,7 +66,7 @@ def main(args):
 
     # region Setting the from and to timestamps
     interval = args.interval
-    now = int(time.time())
+    now = int(time())
 
     # Always set the end time to now - 30 minutes to not get rate limited.
     # If you want more recent data, you need to specify start and end time
@@ -104,7 +102,7 @@ def main(args):
     else:
         all_services = get_services(api_key)
 
-    string = GRAPHITE_PREFIX + '.{service}.{region}.{{value}}'
+    string = args.prefix + '.{service}.{region}.{{value}}'
     regions = get_regions(api_key)
 
     responses = zip(

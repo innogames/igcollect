@@ -5,14 +5,19 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-from socket import gethostname
-import time
+from argparse import ArgumentParser
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='linux.memory')
+    return parser.parse_args()
 
 
 def main():
+    args = parse_args()
     meminfo = get_meminfo()
-    timestamp = str(int(time.time()))
-    hostname = gethostname().replace('.', '_')
 
     # Place for calculated values
     meminfo['Apps'] = meminfo['MemTotal'] - sum((
@@ -32,9 +37,9 @@ def main():
         'Mapped', 'Active', 'Inactive'
     ]
 
-    template = "servers.{}.system.memory.{} {} {}"
+    template = args.prefix + '.{} {} ' + str(int(time()))
     for field in used_fields:
-        print(template.format(hostname, field, meminfo[field], timestamp))
+        print(template.format(field, meminfo[field]))
 
 
 def parse_split_file(filename):

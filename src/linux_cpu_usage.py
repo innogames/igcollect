@@ -5,13 +5,19 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import socket
-import time
+from argparse import ArgumentParser
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='linux.cpu')
+    return parser.parse_args()
 
 
 def main():
-    now = str(int(time.time()))
-    hostname = socket.gethostname().replace('.', '_')
+    args = parse_args()
+    now = str(int(time()))
     header = (
         'user',
         'nice',
@@ -27,20 +33,17 @@ def main():
     for cpu in cs:
         for metric in header:
             print(
-                'servers.{}.system.cpu.{}.{} {} {}'
-                .format(hostname, cpu, metric, cs[cpu][metric], now)
+                '{}.{}.{} {} {}'
+                .format(args.prefix, cpu, metric, cs[cpu][metric], now)
             )
 
     for value in totals:
-        print(
-            'servers.{}.system.cpu.{} {} {}'
-            .format(hostname, value, totals[value], now)
-        )
+        print('{}.{} {} {}'.format(args.prefix, value, totals[value], now))
 
-    print('servers.{}.system.cpu.count {} {}'.format(hostname, count, now))
-    print('servers.{}.system.cpu.uptime {} {}'.format(hostname, uptime, now))
-    print('servers.{}.system.cpu.intr {} {}'.format(hostname, intr, now))
-    print('servers.{}.system.cpu.ctxt {} {}'.format(hostname, ctxt, now))
+    print('{}.count {} {}'.format(args.prefix, count, now))
+    print('{}.uptime {} {}'.format(args.prefix, uptime, now))
+    print('{}.intr {} {}'.format(args.prefix, intr, now))
+    print('{}.ctxt {} {}'.format(args.prefix, ctxt, now))
 
 
 def get_cpustats_dict(header):
@@ -87,7 +90,7 @@ def get_cpustats_dict(header):
             for i in header:
                 cpustats_dict[name][i] = x.pop(0)
         elif line.startswith('btime '):
-            uptime = int(time.time()) - int(line.split(' ', 1)[1])
+            uptime = int(time()) - int(line.split(' ', 1)[1])
         elif line.startswith('intr '):
             interrupts = int(line.split(' ', 2)[1])
         elif line.startswith('ctxt '):

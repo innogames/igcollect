@@ -5,14 +5,19 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-from __future__ import print_function
-import socket
-import time
+from argparse import ArgumentParser
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='linux.network')
+    return parser.parse_args()
 
 
 def main():
-    hostname = socket.gethostname().replace('.', '_')
-    now = str(int(time.time()))
+    args = parse_args()
+    now = str(int(time()))
     metric_names = (
         ('rx_bytes', 'bytesIn'),
         ('tx_bytes', 'bytesOut'),
@@ -33,10 +38,9 @@ def main():
         if interface.startswith('vif'):
             continue
         for key, name in metric_names:
-            print(
-                'servers.{}.system.network.{}.{} {} {}'
-                .format(hostname, interface, name, nd[interface][key], now)
-            )
+            print('{}.{}.{} {} {}'.format(
+                args.prefix, interface, name, nd[interface][key], now
+            ))
 
 
 def get_netdev_dict():

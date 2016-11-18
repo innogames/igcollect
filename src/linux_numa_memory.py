@@ -5,15 +5,20 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import time
-from socket import gethostname
+from argparse import ArgumentParser
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='linux.numa')
+    return parser.parse_args()
 
 
 def main():
-    timestamp = str(int(time.time()))
-    hostname = gethostname().replace('.', '_')
+    args = parse_args()
     path = '/sys/devices/system/node/node{}/meminfo'
-    template = 'servers.{}.system.numa.node{}.{} {} {}'
+    template = args.prefix + '.node{}.{} {}' + str(int(time()))
 
     for node in get_numa_nodes():
         with open(path.format(node)) as fd:
@@ -21,7 +26,7 @@ def main():
                 line_split = line.strip().split()
                 key = line_split[2].rstrip(':')
                 value = int(line_split[3])
-                print(template.format(hostname, node, key, value, timestamp))
+                print(template.format(node, key, value))
 
 
 def parse_split_file(filename):

@@ -5,13 +5,19 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import socket
-import time
+from argparse import ArgumentParser
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='linux.disk')
+    return parser.parse_args()
 
 
 def main():
-    hostname = socket.gethostname().replace('.', '_')
-    now = str(int(time.time()))
+    args = parse_args()
+    template = args.prefix + '.{}.{} {} ' + str(int(time()))
     sector_size = 512
     dd = get_diskstats_dict()
     metric_names = (
@@ -32,10 +38,7 @@ def main():
             value = int(dd[disk][key])
             if key.startswith('sec_'):
                 value *= sector_size
-            print(
-                'servers.{}.system.disk.{}.{} {} {}'
-                .format(hostname, disk, name, value, now)
-            )
+            print(template.format(disk, name, value))
 
 
 def get_diskstats_dict():

@@ -6,14 +6,10 @@
 #
 
 from __future__ import print_function
-import socket, psycopg2, psycopg2.extras
+from psycopg2 import connect
+from psycopg2.extras import RealDictCursor
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-def get_prefix():
-    """The prefix for the pgsql data collectors"""
-
-    hostname = socket.gethostname().replace('.', '_')
-
-    return "servers." + hostname + ".software.pgsql."
 
 def get_user_databases():
     """Prepare the user database list
@@ -31,14 +27,15 @@ def get_user_databases():
 
     return [line['datname'] for line in connect_and_execute(query)]
 
+
 def connect_and_execute(query, database='postgres'):
     """Connect to database, execute given query and return fetched results"""
 
-    conn = psycopg2.connect(database=database)
+    conn = connect(database=database)
 
     try:
-        conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute(query)
 
         return cursor.fetchall()

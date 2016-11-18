@@ -5,19 +5,23 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import glob
-import time
-import socket
+from argparse import ArgumentParser
+from glob import glob
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='smartmontools')
+    return parser.parse_args()
 
 
 def main():
-    for filename in glob.glob('/var/lib/smartmontools/*.state'):
+    args = parse_args()
+    for filename in glob('/var/lib/smartmontools/*.state'):
         template = (
-            'servers.{0}.hardware.smart.{1}.{{0}}.{{1}} {{2}} {2}'.format(
-                socket.gethostname().replace('.', '_'),
-                filename.split('.', 2)[1],
-                int(time.time()),
-            )
+            '{0}.{1}.{{0}}.{{1}} {{2}} {2}'
+            .format(args.prefix, filename.split('.', 2)[1], int(time()))
         )
 
         with open(filename, 'r') as fd:

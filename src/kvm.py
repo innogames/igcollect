@@ -5,17 +5,23 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import time
-import socket
+from argparse import ArgumentParser
+from time import time
 import libvirt
 import xml.etree.ElementTree as ET
 
 
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='kvm')
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     conn = libvirt.openReadOnly(None)
     dom_ids = conn.listDomainsID()
-    hostname = socket.gethostname().replace('.', '_')
-    now = str(int(time.time()))
+    now = str(int(time()))
     for dom_id in dom_ids:
         dom = conn.lookupByID(dom_id)
         name = dom.name().replace('.', '_')
@@ -23,60 +29,64 @@ def main():
         for vcpu in dom.vcpus()[0]:
             cputime = vcpu[2] / 1E9
             print(
-                'servers.{}.virtualisation.vserver.{}.vcpu.{}.time {} {}'
-                .format(hostname, name, vcpu[0], cputime, now)
+                '{}.vserver.{}.vcpu.{}.time {} {}'
+                .format(args.prefix, name, vcpu[0], cputime, now)
             )
             total_cpu += cputime
         print(
-            'servers.{}.virtualisation.vserver.{}.vcpu.time {} {}'
-            .format(hostname, name, total_cpu, now)
+            '{}.vserver.{}.vcpu.time {} {}'
+            .format(args.prefix, name, total_cpu, now)
         )
         tree = ET.fromstring(dom.XMLDesc())
         for target in tree.findall('devices/interface/target'):
             dev = target.attrib['dev']
             stats = dom.interfaceStats(dev)
             print(
-                'servers.{}.virtualisation.vserver.{}.net.{}.bytesIn {} {}'
-                .format(hostname, name, dev, stats[0], now)
+                '{}.vserver.{}.net.{}.bytesIn {} {}'
+                .format(args.prefix, name, dev, stats[0], now)
             )
             print(
-                'servers.{}.virtualisation.vserver.{}.net.{}.bytesOut {} {}'
-                .format(hostname, name, dev, stats[4], now)
+                '{}.vserver.{}.net.{}.bytesOut {} {}'
+                .format(args.prefix, name, dev, stats[4], now)
             )
             print(
-                'servers.{}.virtualisation.vserver.{}.net.{}.pktsIn {} {}'
-                .format(hostname, name, dev, stats[1], now)
+                '{}.vserver.{}.net.{}.pktsIn {} {}'
+                .format(args.prefix, name, dev, stats[1], now)
             )
             print(
-                'servers.{}.virtualisation.vserver.{}.net.{}.pktsOut {} {}'
-                .format(hostname, name, dev, stats[5], now)
+                '{}.vserver.{}.net.{}.pktsOut {} {}'
+                .format(args.prefix, name, dev, stats[5], now)
             )
         for target in tree.findall('devices/disk/target'):
             dev = target.attrib['dev']
             stats = dom.blockStatsFlags(dev)
             print(
-                'servers.{}.virtualisation.vserver.{}.disk.{}.bytesRead {} {}'
-                .format(hostname, name, dev, stats['rd_bytes'], now)
+                '{}.vserver.{}.disk.{}.bytesRead {} {}'
+                .format(args.prefix, name, dev, stats['rd_bytes'], now)
             )
             print(
-                'servers.{}.virtualisation.vserver.{}.disk.{}.bytesWrite {} {}'
-                .format(hostname, name, dev, stats['wr_bytes'], now)
+                '{}.vserver.{}.disk.{}.bytesWrite {} {}'
+                .format(args.prefix, name, dev, stats['wr_bytes'], now)
             )
             print(
-                'servers.{}.virtualisation.vserver.{}.disk.{}.iopsRead {} {}'
-                .format(hostname, name, dev, stats['rd_operations'], now)
+                '{}.vserver.{}.disk.{}.iopsRead {} {}'
+                .format(args.prefix, name, dev, stats['rd_operations'], now)
             )
             print(
-                'servers.{}.virtualisation.vserver.{}.disk.{}.iopsWrite {} {}'
-                .format(hostname, name, dev, stats['wr_operations'], now)
+                '{}.vserver.{}.disk.{}.iopsWrite {} {}'
+                .format(args.prefix, name, dev, stats['wr_operations'], now)
             )
             print(
-                'servers.{}.virtualisation.vserver.{}.disk.{}.ioTimeMs_read {} {}'
-                .format(hostname, name, dev, stats['rd_total_times'] / 1E6, now)
+                '{}.vserver.{}.disk.{}.ioTimeMs_read {} {}'
+                .format(
+                    args.prefix, name, dev, stats['rd_total_times'] / 1E6, now
+                )
             )
             print(
-                'servers.{}.virtualisation.vserver.{}.disk.{}.ioTimeMs_write {} {}'
-                .format(hostname, name, dev, stats['wr_total_times'] / 1E6, now)
+                '{}.vserver.{}.disk.{}.ioTimeMs_write {} {}'
+                .format(
+                    args.prefix, name, dev, stats['wr_total_times'] / 1E6, now
+                )
             )
 
 

@@ -11,15 +11,15 @@
 
 from __future__ import print_function
 
-import argparse
-import time
+from argparse import ArgumentParser
+from time import time
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument('--prefix', default='postgres_query')
     parser.add_argument('--dbname', default='postgres')
     parser.add_argument(
@@ -28,24 +28,24 @@ def parse_args():
         action='append',
         dest='queries',
     )
+    return parser.parse_args()
 
-    return vars(parser.parse_args())
 
-
-def main(prefix, dbname, queries):
+def main():
     """The main program"""
-    now = str(int(time.time()))
+    args = parse_args()
+    now = str(int(time()))
 
-    with psycopg2.connect(database=dbname) as conn:
+    with psycopg2.connect(database=args.dbname) as conn:
         conn.set_session(
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE,
             readonly=True,
         )
 
-        for query in queries:
+        for query in args.queries:
             for line in execute(conn, query):
                 for key, value in line.items():
-                    print(prefix + '.' + key, value, now)
+                    print(args.prefix + '.' + key, value, now)
 
 
 def execute(conn, query):
@@ -57,4 +57,4 @@ def execute(conn, query):
 
 
 if __name__ == '__main__':
-    main(**parse_args())
+    main()

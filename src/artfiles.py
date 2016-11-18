@@ -5,13 +5,14 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
+from argparse import ArgumentParser
 from time import time
 from urllib import urlopen
-from argparse import ArgumentParser
 
 
 def parse_args():
     parser = ArgumentParser()
+    parser.add_argument('--prefix', default='artfiles')
     parser.add_argument(
         "-u",
         "--user",
@@ -36,7 +37,7 @@ def main():
         .format(args.http_user, args.http_pass)
     )
     data = urlopen(artfiles_url)
-    template = 'powerline.{}.{}.{}.{} {} ' + str(int(time()))
+    template = args.prefix + '.{}.{}.{}.{} {} ' + str(int(time()))
     for csv in data.readlines():
         if csv.startswith('"level3"') or csv.startswith('"w408'):
             parse_and_print(template, csv)

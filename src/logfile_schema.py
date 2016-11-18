@@ -27,7 +27,6 @@ import datetime
 
 from os import environ
 from os.path import isfile, expanduser
-from platform import node
 from time import time, tzset
 
 
@@ -45,6 +44,7 @@ def parse_args():
                         help='e.g. %%y-%%m-%%d %%H:%%M:%%S')
     parser.add_argument('message_regex',
                         help='e.g. ([ERROR].*)')
+    parser.add_argument('--prefix', default='logfile')
     parser.add_argument('--timezone', '-z',
                         help='overwrite system timezone e.g. Europe/Berlin')
     parser.add_argument('--unique', '-u', action='store_true',
@@ -127,9 +127,8 @@ def main():
         print('timeshift {}'.format(timeshift))
     else:
         timestamp = str(int(time()))
-        hostname = node().replace('.', '_').lower()
         filename = args.file.replace('.', '_').lower().rsplit('/').pop()
-        metric_path = 'servers.{}.logs.{}'.format(hostname, filename)
+        metric_path = '{}.{}'.format(args.prefix, filename)
 
         if args.total:
             print('{} {} {}'.format(metric_path, errors_total, timestamp))

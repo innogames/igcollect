@@ -5,13 +5,19 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-from __future__ import print_function
-import socket
-import time
+from argparse import ArgumentParser
+from time import time
 import os
 
 
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='linux.disk')
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
     mountpoints = []
     with open('/proc/mounts', 'r') as file_descriptor:
         for line in file_descriptor.readlines():
@@ -19,11 +25,7 @@ def main():
             if fstype in ['ext2', 'ext3', 'ext4', 'xfs']:
                 mountpoints.append(mountpoint)
 
-    now = str(int(time.time()))
-    hostname = socket.gethostname().replace('.', '_')
-
-    template = 'servers.' + hostname + '.system.fs.{}.{} {} ' + now
-
+    template = args.prefix + '.{}.{} {} ' + str(int(time()))
     for mp in mountpoints:
         stat = os.statvfs(mp)
         used = stat.f_frsize * stat.f_blocks - stat.f_bfree * stat.f_bsize

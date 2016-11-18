@@ -5,18 +5,15 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-from __future__ import print_function
-
+from argparse import ArgumentParser
 import json
 import sys
-import time
+from time import gmtime, strftime, time
 import urllib
 import urllib2
-from argparse import ArgumentParser
 
 import grequests
 
-GRAPHITE_PREFIX = 'cdn.highwinds'
 HIGHWINDS_BASE_URL = 'https://striketracker.highwinds.com/api/v1'
 AVG_KEYS = ('xferRateMeanMbps', 'xferRateMbps', 'userXferRateMbps', 'rps',
             'completionRatio')
@@ -26,6 +23,7 @@ PLATFORMS = ('cds', 'sds', 'cdi', 'sdi')
 
 def parse_args():
     parser = ArgumentParser()
+    parser.add_argument('--prefix', default='cdn.highwinds')
     parser.add_argument("-t", "--to", dest="end_time", type=int,
                         help="until when do you want to print the data")
     parser.add_argument("-f", "--from", dest="start_time", type=int,
@@ -83,7 +81,7 @@ def main(args):
     # Always set the end time to now - 30 minutes to not get rate limited,
     # if you more recent data, you need to specify start and end time
     # using the -f and -t parameter
-    now = time.time()
+    now = time()
     if args.end_time:
         end_time = args.end_time
     else:
@@ -152,13 +150,13 @@ def main(args):
                 timestamp = int(int(stat['usageTime']) / 1000)
                 for value in AVG_KEYS:
                     print("%s.%s.%s.%s.%s %f %s" % (
-                        GRAPHITE_PREFIX, host_name, platform,
+                        args.prefix, host_name, platform,
                         region, value, stat[value],
                         timestamp))
 
                 for value in SUM_KEYS:
                     print("%s.%s.%s.%s.%s.count %f %s" % (
-                        GRAPHITE_PREFIX, host_name, platform,
+                        args.prefix, host_name, platform,
                         region, value, stat[value],
                         timestamp))
 
@@ -212,7 +210,7 @@ def get_regions(api_key):
 
 
 def get_date_and_time(seconds=None):
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(seconds))
+    return strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(seconds))
 
 
 if __name__ == "__main__":

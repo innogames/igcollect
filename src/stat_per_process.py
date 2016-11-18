@@ -5,12 +5,28 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-from __future__ import print_function
-import subprocess as sp
-import sys
-import socket
-import time
+from argparse import ArgumentParser
+from subprocess import check_output
 import os.path
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='processes')
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    template = args.prefix + '{}.{} {} ' + str(int(time()))
+    for process_name in get_process_list('/etc/igcollect/stat_per_process.cfg'):
+        process_name = process_name.replace('\n', '')
+        cpu, mem = get_process_data(process_name)
+        if not cpu or not mem:
+            continue
+        print(template.format(process_name, 'cpu_usage', cpu))
+        print(template.format(process_name, 'mem_usage', mem))
 
 
 def get_process_list(config_file):
@@ -23,26 +39,15 @@ def get_process_list(config_file):
 
 def get_process_data(process_name):
     try:
-        pid = sp.check_output(['pgrep', '-f', process_name])
-        process_data = sp.check_output(
-            ['ps', '-p', pid.replace('\n', ''), '-o', 'pcpu,pmem']).split('\n')
+        pid = check_output(['pgrep', '-f', process_name])
+        process_data = check_output(
+            ('ps', '-p', pid.replace('\n', ''), '-o', 'pcpu,pmem')
+        ).split('\n')
         process_data_split = process_data[1].strip().split()
         return process_data_split[0], process_data_split[1]
     except:
         return False, False
 
 
-hostname = socket.gethostname().replace('.', '_')
-now = str(int(time.time()))
-graphite_data = ''
-
-for process_name in get_process_list('/etc/igcollect/stat_per_process.cfg'):
-    process_name = process_name.replace('\n', '')
-    cpu, mem = get_process_data(process_name)
-    if cpu and mem:
-        graphite_data += 'servers.' + hostname + '.software.' + \
-            process_name + '.cpu_usage ' + str(cpu) + ' ' + now + '\n'
-        graphite_data += 'servers.' + hostname + '.software.' + \
-            process_name + '.mem_usage ' + str(mem) + ' ' + now + '\n'
-
-print(graphite_data)
+if __name__ == '__main__':
+    main()

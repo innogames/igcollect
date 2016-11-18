@@ -5,14 +5,22 @@
 # Copyright (c) 2016 InnoGames GmbH
 #
 
-import socket
-import time
-import subprocess
+
+from argparse import ArgumentParser
+from subprocess import Popen, PIPE
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='redis')
+    return parser.parse_args()
 
 
 def main():
-    redis_info = subprocess.Popen(('redis-cli', '-a', redis_pwd(), 'info'),
-                                  stdout=subprocess.PIPE).stdout.read()
+    args = parse_args()
+    redis_info = Popen(('redis-cli', '-a', redis_pwd(), 'info'),
+                       stdout=PIPE).stdout.read()
     redis_info = redis_info.splitlines()
 
     redis_stats = {}
@@ -21,9 +29,7 @@ def main():
             key, value = x.split(':')
             redis_stats[key] = value
 
-    hostname = socket.gethostname().replace('.', '_')
-    timestamp = str(int(time.time()))
-    template = 'servers.' + hostname + '.software.redis.{1} {2} ' + timestamp
+    template = args.prefix + '.{} {} ' + str(int(time()))
     headers = (
         'total_connections_received',
         'total_commands_processed',
@@ -31,21 +37,21 @@ def main():
         'keyspace_misses',
         'used_memory',
     )
-
     for metric in headers:
-        print(template.format(hostname, metric, redis_stats[metric]))
+        print(template.format(metric, redis_stats[metric]))
 
 
 def redis_pwd():
-    '''Returns redis password '''
-    with open("/etc/redis/redis.conf") as f:
-        secret_cfg = f.read().split("\n")
+    """Get the Redis password from the configuration"""
+    with open("/etc/redis/redis.conf") as fd:
+        secret_cfg = fd.read().splitlines()
 
     for line in secret_cfg:
         line = line.strip()
         if line.startswith("requirepass"):
             return line.split(" ")[1].strip()
     return ''
+
 
 if __name__ == '__main__':
     main()

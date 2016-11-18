@@ -6,13 +6,13 @@
 #
 
 from argparse import ArgumentParser
-from socket import gethostname
 from subprocess import check_output
 from time import time
 
 
 def parse_args():
     parser = ArgumentParser()
+    parser.add_argument('--prefix', default='mysql')
     parser.add_argument(
         '--database',
         type=str,
@@ -30,9 +30,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    hostname = gethostname().replace('.', '_')
-    now = int(time())
-    template = 'servers.{}.software.mysql.seconds_behind_master {} {}'
+    template = args.prefix + '.seconds_behind_master {} ' + str(int(time()))
     delay = check_output((
         '/usr/bin/pt-heartbeat',
         '--check',
@@ -41,7 +39,7 @@ def main():
     )).strip()
 
     # Make sure the command returned a proper value by casting it to float
-    print(template.format(hostname, float(delay), now))
+    print(template.format(float(delay)))
 
 
 if __name__ == '__main__':
