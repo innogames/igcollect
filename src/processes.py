@@ -23,8 +23,6 @@ def main():
     for process_name in get_process_list('/etc/igcollect/stat_per_process.cfg'):
         process_name = process_name.replace('\n', '')
         cpu, mem = get_process_data(process_name)
-        if not cpu or not mem:
-            continue
         print(template.format(process_name, 'cpu_usage', cpu))
         print(template.format(process_name, 'mem_usage', mem))
 
@@ -38,15 +36,12 @@ def get_process_list(config_file):
 
 
 def get_process_data(process_name):
-    try:
-        pid = check_output(['pgrep', '-f', process_name])
-        process_data = check_output(
-            ('ps', '-p', pid.replace('\n', ''), '-o', 'pcpu,pmem')
-        ).split('\n')
-        process_data_split = process_data[1].strip().split()
-        return process_data_split[0], process_data_split[1]
-    except:
-        return False, False
+    pid = check_output(['pgrep', '-f', process_name])
+    process_data = check_output(
+        ('ps', '-p', pid.replace('\n', ''), '-o', 'pcpu,pmem')
+    ).split('\n')
+    process_data_split = process_data[1].strip().split()
+    return process_data_split[0], process_data_split[1]
 
 
 if __name__ == '__main__':
