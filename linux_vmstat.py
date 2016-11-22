@@ -38,9 +38,10 @@ def main(fields):
     timestamp = int(time.time())
     hostname = gethostname().replace('.', '_')
 
-    template = "servers.{0}.system.virtualmemory.{1} {2} {3}"
+    template = "servers.{0}.system.vmstat.{1} {2} {3}"
     for field in fields:
         print(template.format(hostname, field, vmstat[field], timestamp))
+
 
 if __name__ == '__main__':
     main(**parse_args())
