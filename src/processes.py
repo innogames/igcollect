@@ -36,12 +36,9 @@ def get_process_list(config_file):
 
 
 def get_process_data(process_name):
-    pid = check_output(['pgrep', '-f', process_name])
-    process_data = check_output(
-        ('ps', '-p', pid.replace('\n', ''), '-o', 'pcpu,pmem')
-    ).split('\n')
-    process_data_split = process_data[1].strip().split()
-    return process_data_split[0], process_data_split[1]
+    pid = check_output(['pgrep', '-f', process_name]).strip()
+    process_data = check_output(('ps', '-p', pid, '-o', 'pcpu=,pmem=')).strip()
+    return process_data.split()
 
 
 if __name__ == '__main__':
