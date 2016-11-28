@@ -38,8 +38,8 @@ def get_numa_nodes():
     else:
         # We don't need stats for servers with only one node
         sys.exit(0)
-    print(nodes)
     return nodes
+
 
 for node in get_numa_nodes():
     with open('/sys/devices/system/node/node{0}/meminfo'.format(node)) as f:
