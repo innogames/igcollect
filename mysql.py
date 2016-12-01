@@ -25,4 +25,13 @@ cur.execute("show variables")
 for row in cur.fetchall():
     if row[1].isdigit():
         print "servers.{0}.software.mysql.variables.{1} {2} {3}".format(hostname, row[0], row[1], now)
-
+# Find out how much space we can recover by Optimize
+sysdbs=['information_schema', 'performance_schema', 'mysql', 'sys', 'test']
+free = 0
+cur.execute("SHOW DATABASES")
+for row in cur.fetchall():
+    if row[0] not in sysdbs:
+        cur.execute('select round(DATA_FREE/1024/1024) from information_schema.tables where TABLE_SCHEMA=\'{0}\' and DATA_FREE>0'.format(row[0]))
+        for value in cur.fetchall():
+            free += value[0]
+print "servers.{0}.software.mysql.status.optimize_freeable {1} {2}".format(hostname, free, now)
