@@ -45,7 +45,6 @@ def main():
     logging.getLogger().addHandler(logging.StreamHandler())
     errors = dict()
     errors_total = 0
-    errors_unique = 0
     timeshift = get_datetime_timeshift(args.timeshift)
 
     logging.getLogger().debug('matchings logs since %s', timeshift)
