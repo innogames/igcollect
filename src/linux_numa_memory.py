@@ -18,7 +18,7 @@ def parse_args():
 def main():
     args = parse_args()
     path = '/sys/devices/system/node/node{}/meminfo'
-    template = args.prefix + '.node{}.{} {}' + str(int(time()))
+    template = args.prefix + '.node{}.{} {} ' + str(int(time()))
 
     for node in get_numa_nodes():
         with open(path.format(node)) as fd:
