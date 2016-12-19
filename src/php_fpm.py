@@ -30,7 +30,7 @@ def main():
     request = Request(url, headers={'Host': args.host})
     response = urlopen(request)
 
-    now = str(int(time()))
+    template = args.prefix + '.{} {} ' + str(int(time()))
     pool_found = False
     for line in response.readlines():
         key, value = line.split(':', 1)
@@ -41,7 +41,7 @@ def main():
             pool_found = value == args.pool
 
         if pool_found and value.isdigit():
-            print(args.prefix + '.' + key, value.strip(), now)
+            print(template.format(key, value.strip()))
 
 
 if __name__ == '__main__':
