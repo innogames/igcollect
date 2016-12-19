@@ -32,7 +32,7 @@ def main():
     args = parse_args()
     hostname = gethostname().replace('.', '_')
     now = int(time())
-    template = 'servers.{}.software.mysql.status.seconds_behind_master {} {}'
+    template = 'servers.{}.software.mysql.seconds_behind_master {} {}'
     delay = check_output((
         '/usr/bin/pt-heartbeat',
         '--check',
