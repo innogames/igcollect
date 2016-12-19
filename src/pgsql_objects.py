@@ -26,7 +26,7 @@ def main():
     #
     for database in user_databases:
         template = (
-            args.prefix + "db." + database + ".table.{0}.{1}.{2} {3} " +
+            args.prefix + ".db." + database + ".table.{0}.{1}.{2} {3} " +
             str(int(time()))
         )
         query = """SELECT nspname, relname, relpages, reltuples, relfrozenxid,
@@ -49,7 +49,7 @@ def main():
     #
     for database in user_databases:
         template = (
-            args.prefix + "db." + database +
+            args.prefix + ".db." + database +
             ".table.{0}.{1}.rel_size.{2} {3} " + str(int(time()))
         )
         query = """SELECT nspname, relname, fname,
@@ -73,7 +73,7 @@ def main():
     #
     for database in user_databases:
         template = (
-            args.prefix + "db." + database + ".table.{0}.{1}.stat.{2} {3} " +
+            args.prefix + ".db." + database + ".table.{0}.{1}.stat.{2} {3} " +
             str(int(time()))
         )
         query = """SELECT schemaname, relname, seq_scan, seq_tup_read, idx_scan,
@@ -95,7 +95,7 @@ def main():
     #
     for database in user_databases:
         template = (
-            args.prefix + "db." + database + ".table.{0}.{1}.statio.{2} {3} " +
+            args.prefix + ".db." + database + ".table.{0}.{1}.statio.{2} {3} " +
             str(int(time()))
         )
         query = """SELECT schemaname, relname, heap_blks_read, heap_blks_hit,
@@ -116,7 +116,7 @@ def main():
     #
     for database in user_databases:
         template = (
-            args.prefix + "db." + database +
+            args.prefix + ".db." + database +
             ".table.{0}.{1}.index.{2}.{3} {4} " + str(int(time()))
         )
         query = """SELECT nspname, table_class.relname,
@@ -145,7 +145,7 @@ def main():
     #
     for database in user_databases:
         template = (
-            args.prefix + "db." + database +
+            args.prefix + ".db." + database +
             ".table.{0}.{1}.index.{2}.statio.{3} {4} " + str(int(time()))
         )
         query = """SELECT schemaname, relname, indexrelname, idx_blks_read,
@@ -168,7 +168,7 @@ def main():
     #
     for database in user_databases:
         template = (
-            args.prefix + "db." + database +
+            args.prefix + ".db." + database +
             ".sequence.{0}.{1}.statio.{2} {3} " + str(int(time()))
         )
         query = """SELECT schemaname, relname, blks_read, blks_hit
@@ -187,7 +187,7 @@ def main():
     #
     for database in user_databases:
         template = (
-            args.prefix + "db." + database +
+            args.prefix + ".db." + database +
             ".function.{0}.{1}.stat.{2} {3} " + str(int(time()))
         )
         query = """SELECT schemaname, funcname, calls, total_time, self_time

@@ -22,7 +22,7 @@ def main():
     user_databases = get_user_databases()
 
     # Databases
-    template = args.prefix + 'db.{}.{} {} ' + str(int(time()))
+    template = args.prefix + '.db.{}.{} {} ' + str(int(time()))
     query = """SELECT datname, datlastsysoid, datfrozenxid, datminmxid,
                     pg_database_size(oid) as size
             FROM pg_database
@@ -38,7 +38,7 @@ def main():
     # Statistics by database system tables
     for database in user_databases:
         template = (
-            args.prefix + 'db.' + database + '.stat_sys_tables.{} {} ' +
+            args.prefix + '.db.' + database + '.stat_sys_tables.{} {} ' +
             str(int(time()))
         )
         query = """SELECT sum(seq_scan) AS sum_seq_scan,
@@ -64,7 +64,7 @@ def main():
     # Statistics by database user tables
     for database in user_databases:
         template = (
-            args.prefix + 'db.' + database + '.stat_user_tables.{} {} ' +
+            args.prefix + '.db.' + database + '.stat_user_tables.{} {} ' +
             str(int(time()))
         )
         query = """SELECT sum(seq_scan) AS sum_seq_scan,
@@ -91,7 +91,7 @@ def main():
     # IO statistics by database system tables
     for database in user_databases:
         template = (
-            args.prefix + 'db.' + database + '.statio_sys_tables.{} {} ' +
+            args.prefix + '.db.' + database + '.statio_sys_tables.{} {} ' +
             str(int(time()))
         )
         query = """SELECT sum(heap_blks_read) AS sum_heap_blks_read,
@@ -112,7 +112,7 @@ def main():
     # IO statistics by database user tables
     for database in user_databases:
         template = (
-            args.prefix + 'db.' + database + '.statio_user_tables.{} {} ' +
+            args.prefix + '.db.' + database + '.statio_user_tables.{} {} ' +
             str(int(time()))
         )
         query = """SELECT sum(heap_blks_read) AS sum_heap_blks_read,
@@ -131,7 +131,7 @@ def main():
                     print(template.format(key, value))
 
     # Tablespaces
-    template = args.prefix + 'tablespace.{}.{} {} ' + str(int(time()))
+    template = args.prefix + '.tablespace.{}.{} {} ' + str(int(time()))
     query = """SELECT spcname, pg_tablespace_size(oid) as size
             FROM pg_tablespace"""
 
@@ -143,7 +143,7 @@ def main():
                 print(template.format(spcname, key, value))
 
     # Statistics by database
-    template = args.prefix + 'db.{}.stat.{} {} ' + str(int(time()))
+    template = args.prefix + '.db.{}.stat.{} {} ' + str(int(time()))
     query = """SELECT datname, numbackends, xact_commit, xact_rollback,
                     blks_read, blks_hit, tup_returned, tup_fetched,
                     tup_inserted, tup_updated, tup_deleted, conflicts,
@@ -160,7 +160,7 @@ def main():
                 print(template.format(datname, key, value))
 
     # Connection counts by database and connection state
-    template = args.prefix + 'db.{}.conn.{} {} ' + str(int(time()))
+    template = args.prefix + '.db.{}.conn.{} {} ' + str(int(time()))
     query = """SELECT datname, state, count(*) as count
             FROM pg_stat_activity
             GROUP BY datname, state"""
@@ -171,7 +171,7 @@ def main():
         ))
 
     # Lock counts by database and lock mode
-    template = args.prefix + 'db.{}.lock.{} {} ' + str(int(time()))
+    template = args.prefix + '.db.{}.lock.{} {} ' + str(int(time()))
     query = """SELECT datname, mode, count(*) as count
             FROM pg_locks
             JOIN pg_database ON pg_locks.database = pg_database.oid
@@ -181,7 +181,7 @@ def main():
         print(template.format(line['datname'], line['mode'], line['count']))
 
     # Statistics of bgwriter process
-    template = args.prefix + 'bgwriter.{} {} ' + str(int(time()))
+    template = args.prefix + '.bgwriter.{} {} ' + str(int(time()))
     query = """SELECT checkpoints_timed, checkpoints_req,
                     checkpoint_write_time, checkpoint_sync_time,
                     buffers_checkpoint, buffers_clean, maxwritten_clean,
