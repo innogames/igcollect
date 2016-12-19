@@ -19,7 +19,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    template = args.prefix + '{}.{} {} ' + str(int(time()))
+    template = args.prefix + '.{}.{} {} ' + str(int(time()))
     for process_name in get_process_list('/etc/igcollect/stat_per_process.cfg'):
         process_name = process_name.replace('\n', '')
         cpu, mem = get_process_data(process_name)

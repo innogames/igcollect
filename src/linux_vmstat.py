@@ -25,7 +25,7 @@ def parse_args():
 def main():
     args = parse_args()
     vmstat = get_vmstat()
-    template = args.prefix + '{} {} ' + str(int(time()))
+    template = args.prefix + '.{} {} ' + str(int(time()))
     for field in args.fields:
         print(template.format(field, vmstat[field]))
 
