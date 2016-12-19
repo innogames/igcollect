@@ -5,42 +5,55 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import time
-import socket
-from socket import gethostname
+from argparse import ArgumentParser
+from socket import socket, AF_INET, SOCK_STREAM, SHUT_WR
+from time import time
 
-now=str(int(time.time()))
-hostname=gethostname().replace('.','_')
 
-names = ["zk_avg_latency", "zk_max_latency", "zk_min_latency", "zk_packets_received", "zk_packets_sent", "zk_ephemerals_count", "zk_approximate_data_size", "zk_open_file_descriptor_count", "zk_max_file_descriptor_count", "zk_znode_count", "zk_watch_count"]
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='zookeeper')
+    return parser.parse_args()
 
-values = {}
+
+def main():
+    args = parse_args()
+    template = args.prefix + '.{} {} ' + str(int(time()))
+    names = {
+        'zk_avg_latency',
+        'zk_max_latency',
+        'zk_min_latency',
+        'zk_packets_received',
+        'zk_packets_sent',
+        'zk_ephemerals_count',
+        'zk_approximate_data_size',
+        'zk_open_file_descriptor_count',
+        'zk_max_file_descriptor_count',
+        'zk_znode_count',
+        'zk_watch_count',
+    }
+
+    data = netcat('localhost', 2181, 'mntr').rstrip('\n')
+    for line in data.splitlines():
+        key, value = line.split('\t')
+        if key in names:
+            print(template.format(key, value))
+
 
 def netcat(hostname, port, content):
-    mntr = ""
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((hostname, port))
-    s.sendall(content)
-    s.shutdown(socket.SHUT_WR)
-    while 1:
-        data = s.recv(1024)
-        if data == "":
+    mntr = ''
+    conn = socket(AF_INET, SOCK_STREAM)
+    conn.connect((hostname, port))
+    conn.sendall(content)
+    conn.shutdown(SHUT_WR)
+    while True:
+        data = conn.recv(1024)
+        if data == '':
             break
-        #for line in data.split("\n"):
-        #    print line
         mntr += data
-    #print "Connection closed."
-    s.close()
+    conn.close()
     return mntr
 
-data = netcat("localhost",2181,"mntr")
 
-data = data.rstrip("\n")
-
-for line in data.split("\n"):
-    key, value = line.split("\t")
-    values[key] = value
-
-for value in names:
-    #print "{0} : {1}".format(value,values[value])
-    print "servers.{0}.software.zookeeper.{1} {2} {3}".format(hostname,value,values[value],now)
+if __name__ == '__main__':
+    main()

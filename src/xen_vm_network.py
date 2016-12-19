@@ -5,8 +5,10 @@
 # Copyright (c) 2015, InnoGames GmbH
 
 from __future__ import print_function
-import socket, time
+import socket
+import time
 import subprocess
+
 
 def resolve_to_vserver(vifname=False, xmdata=False):
     """Returns the vserver name for a given virtual network interface"""
@@ -19,6 +21,7 @@ def resolve_to_vserver(vifname=False, xmdata=False):
 
         if domainid == vifd:
             return name.replace('.', '_')
+
 
 def get_netdev_dict():
     """Returns a dictionary made from /proc/net/dev"""
@@ -52,7 +55,11 @@ def get_netdev_dict():
 
     return(netdev_dict)
 
-xmdata = subprocess.Popen("/usr/sbin/xm list", shell=True, bufsize=8192, stdout=subprocess.PIPE).stdout.readlines()
+xmdata = subprocess.Popen(
+    "/usr/sbin/xm list",
+    shell=True,
+    bufsize=8192,
+    stdout=subprocess.PIPE).stdout.readlines()
 hostname = socket.gethostname().replace('.', '_')
 now = str(int(time.time()))
 

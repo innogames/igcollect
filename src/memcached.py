@@ -5,23 +5,29 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
+from argparse import ArgumentParser
 import re
-import socket
-import sys
 import telnetlib
-import time
+from time import time
 
 
-def main(host='127.0.0.1', port='11211'):
-    hostname = socket.gethostname().replace('.', '_')
-    ts = str(int(time.time()))
-    template = 'servers.' + hostname + '.software.memcached.{1} {2} ' + ts
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='memcached')
+    parser.add_argument('--host', default='127.0.0.1')
+    parser.add_argument('--port', default='11211')
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    template = args.prefix + '.{} {} ' + str(int(time()))
     pattern = re.compile('STAT \w+ \d+(?:.\d+)?$')
 
-    for line in command(host, port, 'stats').splitlines():
+    for line in command(args.host, args.port, 'stats').splitlines():
         if pattern.match(line):
             header, key, value = line.split()
-            print(template.format(hostname, key, value))
+            print(template.format(key, value))
 
 
 def command(host, port, cmd):
@@ -41,4 +47,4 @@ def is_float(value):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    main()

@@ -27,8 +27,36 @@ import datetime
 
 from os import environ
 from os.path import isfile, expanduser
-from platform import node
 from time import time, tzset
+
+
+def parse_args():
+    """Parse arguments"""
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('file',
+                        help='path to log file.')
+    parser.add_argument('timeshift',
+                        help='go e.g. 15m back in time from now.')
+    parser.add_argument('time_regex',
+                        help='e.g. ([0-9]{2}-?){3} ([0-9]{2}:?){3}')
+    parser.add_argument('time_format',
+                        help='e.g. %%y-%%m-%%d %%H:%%M:%%S')
+    parser.add_argument('message_regex',
+                        help='e.g. ([ERROR].*)')
+    parser.add_argument('--prefix', default='logfile')
+    parser.add_argument('--timezone', '-z',
+                        help='overwrite system timezone e.g. Europe/Berlin')
+    parser.add_argument('--unique', '-u', action='store_true',
+                        help='print number of unique events matching.')
+    parser.add_argument('--total', '-t', action='store_true',
+                        help='print number of total events matching.')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help='print total and unique and with pretty text.')
+    parser.add_argument('--debug', '-d', action='store_true',
+                        help='enable debug output - useful to see regex match')
+
+    return parser.parse_args()
 
 
 def main():
@@ -45,7 +73,6 @@ def main():
     logging.getLogger().addHandler(logging.StreamHandler())
     errors = dict()
     errors_total = 0
-    errors_unique = 0
     timeshift = get_datetime_timeshift(args.timeshift)
 
     logging.getLogger().debug('matchings logs since %s', timeshift)
@@ -69,26 +96,26 @@ def main():
                     (time_string and message_string) and
                     (time_string >= timeshift)
                 ):
-                        logging.getLogger().debug(
-                            'message is in time range: evaluating'
-                        )
-                        message_hash = hashlib.md5(
-                            message_string.encode('utf-8')
-                        ).hexdigest()
-                        logging.getLogger().debug(
-                            'hash for message is %s', message_hash
-                        )
+                    logging.getLogger().debug(
+                        'message is in time range: evaluating'
+                    )
+                    message_hash = hashlib.md5(
+                        message_string.encode('utf-8')
+                    ).hexdigest()
+                    logging.getLogger().debug(
+                        'hash for message is %s', message_hash
+                    )
 
-                        if message_hash not in errors:
-                            logging.getLogger().debug(
-                                'new message %s', message_hash
-                            )
-                            errors[message_hash] = 1
-                        else:
-                            logging.getLogger().debug(
-                                'found message %s', message_hash
-                            )
-                            errors[message_hash] += 1
+                    if message_hash not in errors:
+                        logging.getLogger().debug(
+                            'new message %s', message_hash
+                        )
+                        errors[message_hash] = 1
+                    else:
+                        logging.getLogger().debug(
+                            'found message %s', message_hash
+                        )
+                        errors[message_hash] += 1
 
     errors_unique = len(errors)
     for matches in errors.values():
@@ -100,42 +127,13 @@ def main():
         print('timeshift {}'.format(timeshift))
     else:
         timestamp = str(int(time()))
-        hostname = node().replace('.', '_').lower()
         filename = args.file.replace('.', '_').lower().rsplit('/').pop()
-        metric_path = 'servers.{}.logs.{}'.format(hostname, filename)
+        metric_path = '{}.{}'.format(args.prefix, filename)
 
         if args.total:
             print('{} {} {}'.format(metric_path, errors_total, timestamp))
         if args.unique:
             print('{} {} {}'.format(metric_path, errors_unique, timestamp))
-
-
-def parse_args():
-    """Parse arguments"""
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('file',
-                        help='path to log file.')
-    parser.add_argument('timeshift',
-                        help='go e.g. 15m back in time from now.')
-    parser.add_argument('time_regex',
-                        help='e.g. ([0-9]{2}-?){3} ([0-9]{2}:?){3}')
-    parser.add_argument('time_format',
-                        help='e.g. %%y-%%m-%%d %%H:%%M:%%S')
-    parser.add_argument('message_regex',
-                        help='e.g. ([ERROR].*)')
-    parser.add_argument('--timezone', '-z',
-                        help='overwrite system timezone e.g. Europe/Berlin')
-    parser.add_argument('--unique', '-u', action='store_true',
-                        help='print number of unique events matching.')
-    parser.add_argument('--total', '-t', action='store_true',
-                        help='print number of total events matching.')
-    parser.add_argument('--verbose', '-v', action='store_true',
-                        help='print total and unique and with pretty text.')
-    parser.add_argument('--debug', '-d', action='store_true',
-                        help='enable debug output - useful to see regex match')
-
-    return parser.parse_args()
 
 
 def get_datetime_timeshift(timeshift):
@@ -173,7 +171,7 @@ def get_datetime_and_message(line, time_regex, time_format, message_regex):
             logging.getLogger().debug('parsed time is %s', time_string)
         except ValueError:
             logging.getLogger().error(
-                'can not parse time %s with time regex %s', raw_string, 
+                'can not parse time %s with time regex %s', raw_string,
                 time_format
             )
 

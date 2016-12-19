@@ -5,7 +5,16 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import socket, time
+from argparse import ArgumentParser
+from socket import socket, AF_INET, SOCK_STREAM
+from time import time
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('--prefix', default='beanstalkd')
+    return parser.parse_args()
+
 
 def main():
     """The main program
@@ -13,58 +22,57 @@ def main():
     It gets the statistics from the local Beanstalkd service and prints them
     in the format of the Graphite.
     """
-
-    template = 'servers.{0}.software.beanstalkd.stats.{1} {2} {3}'
+    args = parse_args()
+    template = args.prefix + '.stats.{} {} ' + str(int(time()))
     metrics = (
-            'current-jobs-urgent',
-            'current-jobs-ready',
-            'current-jobs-reserved',
-            'current-jobs-delayed',
-            'current-jobs-buried',
-            'cmd-put',
-            'cmd-peek',
-            'cmd-peek-ready',
-            'cmd-peek-delayed',
-            'cmd-peek-buried',
-            'cmd-reserve',
-            'cmd-reserve-with-timeout',
-            'cmd-delete',
-            'cmd-release',
-            'cmd-use',
-            'cmd-watch',
-            'cmd-ignore',
-            'cmd-bury',
-            'cmd-kick',
-            'cmd-touch',
-            'cmd-stats',
-            'cmd-stats-job',
-            'cmd-stats-tube',
-            'cmd-list-tubes',
-            'cmd-list-tube-used',
-            'cmd-list-tubes-watched',
-            'cmd-pause-tube',
-            'job-timeouts',
-            'total-jobs',
-            'current-tubes',
-            'current-connections',
-            'current-producers',
-            'current-workers',
-            'current-waiting',
-            'total-connections',
-            'rusage-utime',
-            'rusage-stime',
-            'binlog-oldest-index',
-            'binlog-current-index',
-            'binlog-records-migrated',
-            'binlog-records-written',
-        )
+        'current-jobs-urgent',
+        'current-jobs-ready',
+        'current-jobs-reserved',
+        'current-jobs-delayed',
+        'current-jobs-buried',
+        'cmd-put',
+        'cmd-peek',
+        'cmd-peek-ready',
+        'cmd-peek-delayed',
+        'cmd-peek-buried',
+        'cmd-reserve',
+        'cmd-reserve-with-timeout',
+        'cmd-delete',
+        'cmd-release',
+        'cmd-use',
+        'cmd-watch',
+        'cmd-ignore',
+        'cmd-bury',
+        'cmd-kick',
+        'cmd-touch',
+        'cmd-stats',
+        'cmd-stats-job',
+        'cmd-stats-tube',
+        'cmd-list-tubes',
+        'cmd-list-tube-used',
+        'cmd-list-tubes-watched',
+        'cmd-pause-tube',
+        'job-timeouts',
+        'total-jobs',
+        'current-tubes',
+        'current-connections',
+        'current-producers',
+        'current-workers',
+        'current-waiting',
+        'total-connections',
+        'rusage-utime',
+        'rusage-stime',
+        'binlog-oldest-index',
+        'binlog-current-index',
+        'binlog-records-migrated',
+        'binlog-records-written',
+    )
     stats = [l.split(': ') for l in read_stats().splitlines()[2:-1]]
-    hostname = [v for k, v in stats if k == 'hostname'][0].replace('.', '_')
-    now = str(int(time.time()))
 
     for key, value in stats:
         if key in metrics:
-            print(template.format(hostname, key, value, now))
+            print(template.format(key, value))
+
 
 def read_stats():
     """Read the stats from the local Beanstalkd service
@@ -82,8 +90,7 @@ def read_stats():
     the program wouldn't hang waiting for the server to respond.  We will use
     2 second timeout to achieve this.
     """
-
-    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    conn = socket(AF_INET, SOCK_STREAM)
     try:
         conn.settimeout(2)
         conn.connect(('localhost', 11300))
@@ -91,6 +98,7 @@ def read_stats():
         return conn.recv(4096)
     finally:
         conn.close()
+
 
 if __name__ == '__main__':
     main()
