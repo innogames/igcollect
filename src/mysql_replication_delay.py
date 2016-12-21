@@ -30,7 +30,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    template = args.prefix + '.seconds_behind_master {} ' + str(int(time()))
+    template = args.prefix + '.seconds_behind_master.{} {} ' + str(int(time()))
     delay = check_output((
         '/usr/bin/pt-heartbeat',
         '--check',
@@ -39,7 +39,7 @@ def main():
     )).strip()
 
     # Make sure the command returned a proper value by casting it to float
-    print(template.format(float(delay)))
+    print(template.format(args.master_id, float(delay)))
 
 
 if __name__ == '__main__':
