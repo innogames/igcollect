@@ -28,12 +28,14 @@ def parse_args():
         action='append',
         dest='queries',
     )
+    parser.add_argument('--key-column')
     return parser.parse_args()
 
 
 def main():
     """The main program"""
     args = parse_args()
+    items = []
     now = str(int(time()))
 
     with psycopg2.connect(database=args.dbname) as conn:
@@ -43,9 +45,16 @@ def main():
         )
 
         for query in args.queries:
-            for line in execute(conn, query):
-                for key, value in line.items():
-                    print(args.prefix + '.' + key, value, now)
+            rows = execute(conn, query)
+            if len(rows) == 0:
+                raise Exception('No result')
+            items.extend(
+                get_row_data(args.key_column, rows) if args.key_column
+                else get_column_data(rows)
+            )
+
+    for key, value in items:
+        print(args.prefix + '.' + key, value, now)
 
 
 def execute(conn, query):
@@ -54,6 +63,28 @@ def execute(conn, query):
         cursor.execute(query)
 
         return cursor.fetchall()
+
+
+def get_column_data(rows):
+    if len(rows) > 1:
+        raise Exception('Multiple rows')
+    for row in rows:
+        return row.items()
+
+
+def get_row_data(key_column, rows):
+    first_row = rows[0]
+    if key_column not in first_row:
+        raise Exception('Key column is not there')
+    if len(first_row) == 1:
+        raise Exception('No column to print values')
+    if len(first_row) > 2:
+        raise Exception('More than 2 columns')
+
+    for row in rows:
+        key = row.pop(key_column)
+        for value in row.values():
+            yield key, value
 
 
 if __name__ == '__main__':
