@@ -65,7 +65,7 @@ def main():
                     if switch['id'] in args.switches]
 
     stat_requests = [
-        get_traffic_stat_request(switch['id'], auth=auth)
+        get_traffic_stat_request(switch['id'], base=1, auth=auth)
         for switch in switches
         ]
     for request in stat_requests:
@@ -77,13 +77,21 @@ def main():
 
     template = '{prefix}.{title}.{port}.{metric} {value} {time}'
     factors = {'Tbps': 1000000000000, 'Gbps': 1000000000, 'Mbps': 1000000,
-               'Kbps': 1000, 'Bps': 1}
+               'Kbps': 1000, 'bps': 1}
     for switch, response in responses:
         if not response:
             logger.debug('No response: {}'.format(response.url))
             continue
 
-        json_data = response.json()
+        try:
+            json_data = response.json()
+        except ValueError as e:
+            logger.warning('Error: %s', e)
+            logger.warning('Strange Response:')
+            logger.warning('URL: %s', response.url)
+            logger.warning('Content:\n%s', response.content)
+            continue
+
         logger.info(json_data)
 
         title = switch['switch'].replace('.', '_')
@@ -109,13 +117,13 @@ def get_switches(auth):
     return response.json()
 
 
-def get_traffic_stat_request(switch_id, auth=None):
+def get_traffic_stat_request(switch_id, base=None, auth=None):
     scheme = 'https'
     host = 'dcp.c.artfiles.de'
     endpoint = 'api/stats/get_traffic.html'
     url = ('{scheme}://{host}/{endpoint}'
            .format(scheme=scheme, host=host, endpoint=endpoint))
-    query = {'id': str(switch_id)}
+    query = {'id': switch_id, 'si_base': base}
     request = grequests.get(url, params=query, auth=auth)
 
     return request
@@ -140,9 +148,7 @@ def parse_and_print_data(data, metric, factors=None, filter=None,
         if not filter(timestamp):
             continue
 
-        value = abs(traffic.get('y'))
-        value = round(value * 100)
-        value = int(value * (factor / 100))
+        value = abs(traffic.get('y')) * factor
         print(template.format(
             metric=metric, value=value, time=timestamp, **template_params)
         )
