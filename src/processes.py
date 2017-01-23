@@ -6,6 +6,8 @@
 #
 
 from argparse import ArgumentParser
+from collections import namedtuple
+from re import compile
 from subprocess import check_output
 from time import time
 
@@ -20,16 +22,23 @@ def parse_args():
 def main():
     args = parse_args()
     template = args.prefix + '.{}.{} {} ' + str(int(time()))
+    processes = list(get_processes())
     for command in args.commands:
-        cpu, mem = get_process_data(command)
-        print(template.format(command, 'cpu_usage', cpu))
-        print(template.format(command, 'mem_usage', mem))
+        pattern = compile(command)
+
+        for process in processes:
+            if pattern.search(process.command):
+                print(template.format(command, 'cpu_usage', process.pcpu))
+                print(template.format(command, 'mem_usage', process.pmem))
+                break
 
 
-def get_process_data(command):
-    pid = check_output(('pgrep', '-f', command)).strip()
-    process_data = check_output(('ps', '-p', pid, '-o', 'pcpu=,pmem=')).strip()
-    return process_data.split()
+def get_processes():
+    columns = ['pcpu', 'pmem', 'command']
+    Process = namedtuple('Process', columns)
+    args = ['ps', '-A'] + ['-o' + c for c in columns]
+    for line in check_output(args).splitlines():
+        yield Process(*line.strip().split(None, len(columns) - 1))
 
 
 if __name__ == '__main__':
