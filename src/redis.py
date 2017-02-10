@@ -36,6 +36,10 @@ def main():
         'keyspace_hits',
         'keyspace_misses',
         'used_memory',
+        'used_cpu_sys',
+        'used_cpu_user',
+        'used_cpu_sys_children',
+        'used_cpu_user_children',
     )
     for metric in headers:
         print(template.format(metric, redis_stats[metric]))
