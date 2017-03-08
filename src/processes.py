@@ -12,6 +12,7 @@ from subprocess import check_output
 from time import time
 from platform import system
 
+
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='processes')
