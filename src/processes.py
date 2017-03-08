@@ -30,11 +30,12 @@ def main():
             if pattern.search(process.command):
                 print(template.format(command, 'cpu_usage', process.pcpu))
                 print(template.format(command, 'mem_usage', process.pmem))
+                print(template.format(command, 'etimes', process.etimes))
                 break
 
 
 def get_processes():
-    columns = ['pcpu', 'pmem', 'command']
+    columns = ['pcpu', 'pmem', 'etimes', 'command']
     Process = namedtuple('Process', columns)
     args = ['ps', '-A'] + ['-o' + c for c in columns]
     for line in check_output(args).splitlines():
