@@ -10,7 +10,7 @@ from collections import namedtuple
 from re import compile
 from subprocess import check_output
 from time import time
-
+from platform import system
 
 def parse_args():
     parser = ArgumentParser()
@@ -37,7 +37,10 @@ def main():
 def get_processes():
     columns = ['pcpu', 'pmem', 'etimes', 'command']
     Process = namedtuple('Process', columns)
-    args = ['ps', '-A'] + ['-o' + c for c in columns]
+    if system() == 'Linux':
+        args = ['ps', '-A', '--sort=start_time'] + ['-o' + c for c in columns]
+    else:
+        args = ['ps', '-A', '-O started'] + ['-o' + c for c in columns]
     for line in check_output(args).splitlines():
         yield Process(*line.strip().split(None, len(columns) - 1))
 
