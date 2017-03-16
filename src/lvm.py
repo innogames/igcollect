@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # igcollect - Linux volume manager
 #
@@ -18,7 +18,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    vgdisplay = check_output(('/sbin/vgdisplay', '-c'))
+    vgdisplay = check_output(('/sbin/vgdisplay', '-c')).decode('utf-8')
     template = args.prefix + '.{}.{} {} ' + str(int(time()))
 
     for line in vgdisplay.splitlines():
