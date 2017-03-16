@@ -42,7 +42,7 @@ def get_processes():
         args = ['ps', '-A', '--sort=start_time'] + ['-o' + c for c in columns]
     else:
         args = ['ps', '-A', '-O started'] + ['-o' + c for c in columns]
-    for line in check_output(args).splitlines():
+    for line in check_output(args).decode('utf-8').splitlines():
         yield Process(*line.strip().split(None, len(columns) - 1))
 
 

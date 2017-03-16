@@ -62,7 +62,7 @@ def main():
 
     # Add numastat values
     for node in nodes:
-        total_stats[node]['cpu_count'] = core2node.values().count(node)
+        total_stats[node]['cpu_count'] = list(core2node.values()).count(node)
         for line in cat(
             '/sys/devices/system/node/node{i}/numastat', i=node
         ).splitlines():
@@ -121,7 +121,7 @@ def run(cmd, **kwargs):
 
 
 def cat(f, **kwargs):
-    return run('cat ' + f, **kwargs)
+    return run('cat ' + f, **kwargs).decode('utf-8')
 
 
 if __name__ == '__main__':
