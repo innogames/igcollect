@@ -32,11 +32,12 @@ def main():
                 print(template.format(command, 'cpu_usage', process.pcpu))
                 print(template.format(command, 'mem_usage', process.pmem))
                 print(template.format(command, 'etimes', process.etimes))
+                print(template.format(command, 'rss', process.rss))
                 break
 
 
 def get_processes():
-    columns = ['pcpu', 'pmem', 'etimes', 'command']
+    columns = ['pcpu', 'pmem', 'etimes', 'rss', 'command']
     Process = namedtuple('Process', columns)
     if system() == 'Linux':
         args = ['ps', '-A', '--sort=start_time'] + ['-o' + c for c in columns]
