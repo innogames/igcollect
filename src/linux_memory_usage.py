@@ -34,7 +34,7 @@ def main():
     used_fields = [
         'Apps', 'PageTables', 'SwapCached', 'VmallocUsed', 'Slab',
         'Cached', 'Buffers', 'MemFree', 'Swap', 'Committed_AS',
-        'Mapped', 'Active', 'Inactive'
+        'Mapped', 'Active', 'Inactive', 'MemTotal'
     ]
 
     template = args.prefix + '.{} {} ' + str(int(time()))
