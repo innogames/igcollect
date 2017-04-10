@@ -51,6 +51,9 @@ def parse_netstat():
             ('/usr/bin/netstat', '-I', iface, '-nbd'),
             stdout=PIPE).stdout.read().splitlines()[1].split()
         for column, index in NETSTAT_COLUMNS.iteritems():
+            if len(netstat) == 12:
+                # Tunnel interfaces have no MAC
+                index -= 1
             iface_info[iface][column] = netstat[index]
 
     return iface_info
