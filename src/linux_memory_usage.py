@@ -11,7 +11,7 @@ from time import time
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='linux.memory')
+    parser.add_argument('--prefix', default='memory_usage')
     return parser.parse_args()
 
 

@@ -11,7 +11,7 @@ from time import time
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='linux.load')
+    parser.add_argument('--prefix', default='load_avg')
     return parser.parse_args()
 
 

@@ -16,7 +16,7 @@ from time import time
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='system.cpu')
+    parser.add_argument('--prefix', default='cpu_usage')
     return parser.parse_args()
 
 

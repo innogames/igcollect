@@ -11,7 +11,7 @@ from time import time
 
 def parse_args():
     parser = ArgumentParser(prog='linux_vmstat.py')
-    parser.add_argument('--prefix', default='linux.vmstat')
+    parser.add_argument('--prefix', default='vmstat')
     parser.add_argument(
         '--fields',
         dest='fields',

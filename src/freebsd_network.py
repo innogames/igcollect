@@ -36,7 +36,7 @@ NETSTAT_COLUMNS = {
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='system.network')
+    parser.add_argument('--prefix', default='network')
     return parser.parse_args()
 
 

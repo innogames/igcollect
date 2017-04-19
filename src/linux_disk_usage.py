@@ -12,7 +12,7 @@ import os
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='linux.disk')
+    parser.add_argument('--prefix', default='disk_usage')
     return parser.parse_args()
 
 
