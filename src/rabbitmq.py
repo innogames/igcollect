@@ -34,6 +34,12 @@ def main():
         'channels',
     ]
 
+    overview_queue_totals_metrics = [
+    'messages',
+    'messages_ready',
+    'messages_unacknowledged',
+    ]
+
     overview_message_stats_metrics = ['publish']
 
     data = download(rabbit_url + '/overview')
@@ -46,6 +52,10 @@ def main():
     for metric in overview_message_stats_metrics:
         print(template.format(
             'message_stats.' + metric, data['message_stats'][metric]
+        ))
+    for metric in overview_queue_totals_metrics:
+        print(template.format(
+            'queue_totals.' + metric, data['queue_totals'][metric]
         ))
 
     data = download(rabbit_url + '/nodes/' + nodename)
