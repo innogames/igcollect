@@ -44,7 +44,7 @@ def parse_args():
                         help='e.g. %%y-%%m-%%d %%H:%%M:%%S')
     parser.add_argument('message_regex',
                         help='e.g. ([ERROR].*)')
-    parser.add_argument('--prefix', default='logfile')
+    parser.add_argument('--prefix', default='logs')
     parser.add_argument('--timezone', '-z',
                         help='overwrite system timezone e.g. Europe/Berlin')
     parser.add_argument('--unique', '-u', action='store_true',
