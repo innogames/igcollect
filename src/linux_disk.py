@@ -11,7 +11,7 @@ from time import time
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='disk_io')
+    parser.add_argument('--prefix', default='disk')
     return parser.parse_args()
 
 
