@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='kvm')
+    parser.add_argument('--prefix', default='virtualisation')
     return parser.parse_args()
 
 
