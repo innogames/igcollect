@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 #
-# logfile_schema.py
+# logs.py
 #
-# Copyright (c) 2016, InnoGames GmbH
+# Copyright (c) 2017, InnoGames GmbH
 #
 
 """
-logfile_schema.py -- a python script to find messages within timeshift
+logs.py -- a python script to find messages within timeshift
 
 This script is capable of scanning log files for a given regex for a message
 and then compare them by a given time format if they are within a given
@@ -15,8 +15,8 @@ timeshift.
 Imagine for example you want to scan a log file every 15 minutes for errors and
 see how many errors occur and how many duplicates you have.
 
-logfile_schema.py myfile.log 15m "([0-9]{2}-?){3} ([0-9]{2}:?){3}"
-                  "%y-%m-%d %H:%M:%S" "(\[ERROR\].*)" --verbose
+python logs.py myfile.log 15m "([0-9]{2}-?){3} ([0-9]{2}:?){3}" \
+    "%y-%m-%d %H:%M:%S" "(\[ERROR\].*)" --verbose
 """
 
 import re
