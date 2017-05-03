@@ -6,10 +6,6 @@
 #
 
 import itertools
-try:
-    import libvirt
-except ImportError:
-    libvirt = None
 import os.path
 import re
 import socket
@@ -75,41 +71,6 @@ def main():
                 'servers.{host}.system.numa.node{node}.{key} {value} {now}'
                 .format(host=hostname, node=node, key=key, value=value, now=now())
             )
-
-    # VCPU -> node assignment
-    conn = libvirt and libvirt.openReadOnly(None)
-    if conn is not None:
-        result = vm_nodes(conn, core2node, nodes)
-        for guest, assignment in result.items():
-            for node, num_vcpu in assignment.items():
-                print(
-                    'servers.{host}.virtualisation.vserver.{guest}.numa.node{node}.vcpu_count {value} {now}'
-                    .format(
-                        host=hostname,
-                        guest=guest.replace('.', '_'),
-                        node=node,
-                        value=num_vcpu,
-                        now=now(),
-                    )
-                )
-
-
-def vm_nodes(conn, core2node, nodes):
-    result = {}
-    for dom in conn.listAllDomains(libvirt.VIR_CONNECT_LIST_DOMAINS_ACTIVE):
-        # dom.vcpus returns:
-        # ([info, info, ...], [affinity, affinity, ...])
-        # Both lists have len() == number of VCPUs
-        #
-        # Info block:
-        #   (<vcpu id>, <?>, <total cpu time?>, <physical core ID>)
-        # Affinity block is a tuple with a bool for each physical core.
-        vcpu_nodes = [core2node[e[3]] for e in dom.vcpus()[0]]
-        name = dom.name()
-        result[name] = {}
-        for node in nodes:
-            result[name][node] = vcpu_nodes.count(node)
-    return result
 
 
 def now():
