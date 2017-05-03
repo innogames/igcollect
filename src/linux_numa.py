@@ -21,6 +21,11 @@ def main():
     template = args.prefix + '.node{}.{}.{} {} ' + str(int(time()))
 
     for node in get_numa_nodes():
+        with open(path.format(node, 'numastat')) as fd:
+            for line in fd:
+                key, value = line.strip().split(None, 1)
+                print(template.format(node, 'stat', key, value))
+
         with open(path.format(node, 'meminfo')) as fd:
             for line in fd:
                 line_split = line.strip().split()
