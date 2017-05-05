@@ -247,7 +247,7 @@ def standarize_portname(port_name):
         return port_name
     if re.match('\A[0-9]:[0-9]+\Z', port_name):
         # Extreme normal port
-        return port_name
+        return port_name.replace(':', '_')
     if re.match('\A(Gi|Te)[0-9]/[0-9]/[0-9]+\Z', port_name):
         # Dell normal port
         return port_name.replace('/', '_')
