@@ -11,27 +11,18 @@
 from argparse import ArgumentParser
 from time import time
 from pysnmp import proto, error
-from pysnmp.hlapi import (
+from pysnmp.entity.rfc3413.oneliner import cmdgen
+from pysnmp.entity.rfc3413.oneliner.cmdgen import (
         CommunityData,
-        ContextData,
-        getCmd,
-        bulkCmd,
-        ObjectType,
-        ObjectIdentity,
-        SnmpEngine,
-        UdpTransportTarget,
         UsmUserData,
         usmHMACSHAAuthProtocol,
         usmDESPrivProtocol,
-    )
-
+)
 import re
 import sys
 
 # Predefine some variables, it makes this program run a bit faster.
-snmp_engine = SnmpEngine()
-context_data = ContextData()
-
+cmd_gen  = cmdgen.CommandGenerator()
 
 OIDS = {
     'switch_model': '.1.3.6.1.2.1.1.1.0',
@@ -123,7 +114,7 @@ def get_snmp_connection(args):
             privProtocol=usmDESPrivProtocol,
         )
 
-    transport_target = UdpTransportTarget((args.switch, 161))
+    transport_target = cmdgen.UdpTransportTarget((args.switch, 161))
 
     return {
         'auth_data': auth_data,
@@ -134,14 +125,10 @@ def get_snmp_connection(args):
 def get_snmp_value(snmp, OID):
     """ Get a single value from SNMP """
 
-    errorIndication, errorStatus, errorIndex, varBinds = next(
-        getCmd(
-            snmp_engine,
-            snmp['auth_data'],
-            snmp['transport_target'],
-            context_data,
-            ObjectType(ObjectIdentity(OID),)
-        )
+    errorIndication, errorStatus, errorIndex, varBinds = cmd_gen.getCmd(
+        snmp['auth_data'],
+        snmp['transport_target'],
+        OID,
     )
     if errorIndication:
         raise SwitchException('Unable to get SNMP value: {}'.
@@ -158,22 +145,19 @@ def get_snmp_table(snmp, OID):
     """
 
     ret = {}
-    for errorIndication, errorStatus, errorIndex, varBinds in bulkCmd(
-        snmp_engine,
+    errorIndication, errorStatus, errorIndex, varBindTable = cmd_gen.bulkCmd(
         snmp['auth_data'],
         snmp['transport_target'],
-        context_data,
         0,
         25,
-        ObjectType(ObjectIdentity(OID),),
-        lexicographicMode=False,
-        lookupMib=False,
-    ):
+        OID,
+    )
+    for varBind in varBindTable:
         if errorIndication:
             raise SwitchException('Unable to get SNMP value: {}'.
                                   format(errorIndication))
-        index = int(str(varBinds[0][0][-1:]))
-        ret[index] = convert_snmp_type(varBinds)
+        index = int(str(varBind[0][0][-1:]))
+        ret[index] = convert_snmp_type(varBind)
 
     return ret
 
