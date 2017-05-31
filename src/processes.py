@@ -32,7 +32,7 @@ def main():
                 print(template.format(command, 'cpu_usage', process.pcpu))
                 print(template.format(command, 'mem_usage', process.pmem))
                 print(template.format(command, 'etimes', process.etimes))
-                print(template.format(command, 'rss', process.rss))
+                print(template.format(command, 'rss', int(process.rss) * 1024))
                 break
 
 
