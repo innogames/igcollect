@@ -16,13 +16,14 @@ from pysnmp.entity.rfc3413.oneliner.cmdgen import (
         CommunityData,
         UsmUserData,
         usmHMACSHAAuthProtocol,
+        usmAesCfb128Protocol,
         usmDESPrivProtocol,
 )
 import re
 import sys
 
 # Predefine some variables, it makes this program run a bit faster.
-cmd_gen  = cmdgen.CommandGenerator()
+cmd_gen = cmdgen.CommandGenerator()
 
 OIDS = {
     'switch_model': '.1.3.6.1.2.1.1.1.0',
@@ -94,6 +95,11 @@ def parse_args():
 
     parser.add_argument('--auth', help='SNMPv3 authentication key')
     parser.add_argument('--priv', help='SNMPv3 privacy key')
+    parser.add_argument(
+            '--priv_proto',
+            help='SNMPv3 privacy protocol: aes (default) or des',
+            default='aes'
+    )
     return parser.parse_args()
 
 
@@ -108,10 +114,15 @@ def get_snmp_connection(args):
     if args.community:
         auth_data = CommunityData(args.community, mpModel=1)
     else:
+        if args.priv_proto == 'des':
+            priv_proto = usmDESPrivProtocol
+        if args.priv_proto == 'aes':
+            priv_proto = usmAesCfb128Protocol
+
         auth_data = UsmUserData(
             args.user, args.auth, args.priv,
             authProtocol=usmHMACSHAAuthProtocol,
-            privProtocol=usmDESPrivProtocol,
+            privProtocol=priv_proto,
         )
 
     transport_target = cmdgen.UdpTransportTarget((args.switch, 161))
