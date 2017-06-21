@@ -38,7 +38,7 @@ LAGG_OIDS = {
 
 CPU_OIDS = {
     'procurve': '.1.3.6.1.4.1.11.2.14.11.5.1.9.6.1.0',
-    'powerconnect': '.1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.4.0',
+    'powerconnect': '.1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.9.0',
     'extreme': '.1.3.6.1.4.1.1916.1.32.1.2.0',
 }
 
@@ -283,6 +283,13 @@ def cpu_stats(prefix, snmp, model):
     """
 
     cpu_usage = get_snmp_value(snmp, CPU_OIDS[model])
+
+    if model == 'powerconnect':
+        # SNMP returns such ugly string
+        #     5 Secs ( 18.74%)    60 Secs ( 17.84%)   300 Secs ( 18.12%)
+        m = re.search('60 Secs \( ?([0-9]+)[0-9\.]*%\)', cpu_usage)
+        cpu_usage = int(m.group(1))
+
     template = prefix + '.cpu {} ' + str(int(time()))
     print(template.format(cpu_usage))
 
