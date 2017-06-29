@@ -19,6 +19,7 @@ import xml.etree.ElementTree as ET
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='virtualisation')
+    parser.add_argument('--trim-domain')
     return parser.parse_args()
 
 
@@ -30,7 +31,11 @@ def main():
     core2node = get_cpu_core_to_numa_node_mapping()
     for dom_id in dom_ids:
         dom = conn.lookupByID(dom_id)
-        name = dom.name().replace('.', '_')
+        name = dom.name()
+        if args.trim_domain:
+            if name.endswith('.' + args.trim_domain):
+                name = name[:-len('.' + args.trim_domain)]
+        name = name.replace('.', '_')
         total_cpu = 0
         vcpu_nodes = defaultdict(int)
         for vcpu in dom.vcpus()[0]:
