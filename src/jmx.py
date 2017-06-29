@@ -6,9 +6,9 @@
 #
 
 from argparse import ArgumentParser
-from time import time
-from subprocess import Popen, PIPE
-import os
+from os.path import dirname, abspath
+from subprocess import Popen
+from sys import exit
 
 
 def parse_args():
@@ -21,18 +21,27 @@ def parse_args():
 
 def main():
     args = parse_args()
+    jar_path = dirname(abspath(__file__)) + '/../../share/java/jmxcollect.jar'
 
     if len(args.ports) != len(args.names):
-        print("Length of ports must be the same as length of names")
+        print('Length of ports must be the same as length of names')
         exit(1)
 
     exit_code = 0
     for index, name in enumerate(args.names):
-        p = Popen(['java', '-jar', '/usr/share/igcollect/libigcollect/jmxcollect.jar', '--host', 'localhost', '--prefix', args.prefix + '.' + name, '--port', args.ports[index]], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        output, err = p.communicate()
-        print(output)
-        if p.returncode > exit_code:
-            exit_code = p.returncode
+        proc = Popen([
+            'java',
+            '-jar',
+            jar_path,
+            '--host',
+            'localhost',
+            '--prefix',
+            args.prefix + '.' + name,
+            '--port',
+            args.ports[index],
+        ])
+        if proc.wait() > exit_code:
+            exit_code = proc.returncode
 
     exit(exit_code)
 

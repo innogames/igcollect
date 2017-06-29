@@ -3,13 +3,15 @@
 .PHONY:
 
 libexecdir!= if [ `uname` = 'FreeBSD' ]; then echo 'libexec'; else echo 'share'; fi
-targetdir=$(DESTDIR)/$(PREFIX)/$(libexecdir)/igcollect
+targetdir=$(DESTDIR)/$(PREFIX)
 
 all:
 	@echo "Dummy build target"
 
 install:
-	mkdir -p ${targetdir}
-	mkdir -p ${targetdir}/libigcollect
-	install src/*.py		${targetdir}
-	install src/libigcollect/*.py	${targetdir}/libigcollect
+	mkdir -p ${targetdir}/${libexecdir}/igcollect
+	mkdir -p ${targetdir}/${libexecdir}/igcollect/libigcollect
+	mkdir -p ${targetdir}/share/java
+	install src/*.py		${targetdir}/${libexecdir}/igcollect
+	install src/libigcollect/*.py	${targetdir}/${libexecdir}/igcollect/libigcollect
+	install share/java/*.jar	${targetdir}/share/java
