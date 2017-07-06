@@ -42,6 +42,7 @@ def main():
 
     overview_message_stats_metrics = ['publish']
 
+    # Overview data
     data = download(rabbit_url + '/overview')
     nodename = data['node']
 
@@ -58,10 +59,15 @@ def main():
             'queue_totals.' + metric, data['queue_totals'][metric]
         ))
 
+    # Node data
     data = download(rabbit_url + '/nodes/' + nodename)
 
     for metric in nodes_metrics:
         print(template.format(metric, data[metric]))
+
+    # Shovels data
+    data = download(rabbit_url + '/shovels')
+    print(template.format('shovels.amount', str(len(data))))
 
 
 def download(url):
