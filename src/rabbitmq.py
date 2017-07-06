@@ -47,27 +47,43 @@ def main():
     nodename = data['node']
 
     for metric in overview_object_totals_metrics:
-        print(template.format(
-            'object_totals.' + metric, data['object_totals'][metric]
-        ))
+        try:
+            print(template.format(
+                'object_totals.' + metric, data['object_totals'][metric]
+            ))
+        except KeyError:
+            pass
     for metric in overview_message_stats_metrics:
-        print(template.format(
-            'message_stats.' + metric, data['message_stats'][metric]
-        ))
+        try:
+            print(template.format(
+                'message_stats.' + metric, data['message_stats'][metric]
+            ))
+        except KeyError:
+            pass
+
     for metric in overview_queue_totals_metrics:
-        print(template.format(
-            'queue_totals.' + metric, data['queue_totals'][metric]
-        ))
+        try:
+            print(template.format(
+                'queue_totals.' + metric, data['queue_totals'][metric]
+            ))
+        except KeyError:
+                pass
 
     # Node data
     data = download(rabbit_url + '/nodes/' + nodename)
 
     for metric in nodes_metrics:
-        print(template.format(metric, data[metric]))
+        try:
+            print(template.format(metric, data[metric]))
+        except KeyError:
+            pass
 
     # Shovels data
-    data = download(rabbit_url + '/shovels')
-    print(template.format('shovels.amount', str(len(data))))
+    try:
+        data = download(rabbit_url + '/shovels')
+        print(template.format('shovels.amount', str(len(data))))
+    except urllib2.HTTPError:
+        pass
 
 
 def download(url):
