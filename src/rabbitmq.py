@@ -81,9 +81,15 @@ def main():
     # Shovels data
     try:
         data = download(rabbit_url + '/shovels')
-        print(template.format('shovels.amount', str(len(data))))
     except urllib2.HTTPError:
         pass
+    else:
+        print(template.format('shovels.amount', str(len(data))))
+        for shovel in data:
+            state = 0
+            if shovel['state'] == 'running':
+                state = 1
+            print(template.format('shovels.' + shovel['name'], state))
 
 
 def download(url):
