@@ -84,7 +84,7 @@ def main():
     except urllib2.HTTPError:
         pass
     else:
-        print(template.format('shovels.amount', str(len(data))))
+        print(template.format('object_totals.shovels', str(len(data))))
         for shovel in data:
             state = 0
             if shovel['state'] == 'running':
