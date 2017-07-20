@@ -79,9 +79,9 @@ def main():
     if not model:
         return -1
 
+    cpu_stats(args.prefix, snmp, model)
     monitored_ports = get_monitored_ports(snmp, model)
     ports_stats(args.prefix, snmp, monitored_ports)
-    cpu_stats(args.prefix, snmp, model)
 
 
 def parse_args():
