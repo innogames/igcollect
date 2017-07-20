@@ -273,7 +273,8 @@ def ports_stats(prefix, snmp, ports):
         template = prefix + '.ports.{}.{} {} ' + str(int(time()))
         table = get_snmp_table(snmp, oid)
         for port_idx, port_name in ports.items():
-            print(template.format(port_name, counter, table[port_idx]))
+            if port_idx in table:
+                print(template.format(port_name, counter, table[port_idx]))
 
 
 def cpu_stats(prefix, snmp, model):
