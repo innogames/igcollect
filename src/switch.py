@@ -40,6 +40,8 @@ CPU_OIDS = {
     'procurve': '.1.3.6.1.4.1.11.2.14.11.5.1.9.6.1.0',
     'powerconnect': '.1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.9.0',
     'extreme': '.1.3.6.1.4.1.1916.1.32.1.2.0',
+    # 1-minute average for the 1st cpu of stack because we don't stack them.
+    'force10_mxl': '1.3.6.1.4.1.6027.3.19.1.2.8.1.3.1',
 }
 
 COUNTERS = {
@@ -197,6 +199,8 @@ def get_switch_model(snmp):
         return 'procurve'
     elif 'ExtremeXOS' in model:
         return'extreme'
+    elif 'Dell Networking OS' in model:
+        return 'force10_mxl'
 
     print('Unknown switch model', file=sys.stderr)
     return None
@@ -262,6 +266,14 @@ def standarize_portname(port_name):
     if re.match('\A(Gi|Te)[0-9]/[0-9]/[0-9]+\Z', port_name):
         # Dell normal port
         return port_name.replace('/', '_')
+    g = re.match(
+        '\A(TenGigabitEthernet|fortyGigE) ([0-9]+/[0-9]+)\Z',
+        port_name
+    )
+    if g:
+        # Force 10 MXL port
+        return g.group(2).replace('/', '_')
+
     return None
 
 
