@@ -42,6 +42,7 @@ CPU_OIDS = {
     'extreme': '.1.3.6.1.4.1.1916.1.32.1.2.0',
     # 1-minute average for the 1st cpu of stack because we don't stack them.
     'force10_mxl': '1.3.6.1.4.1.6027.3.26.1.4.4.1.4.2.1.1',
+    'cisco_ios': '1.3.6.1.4.1.9.9.109.1.1.1.1.4.1',
 }
 
 COUNTERS = {
@@ -161,7 +162,7 @@ def get_snmp_table(snmp, OID):
     errorIndication, errorStatus, errorIndex, varBindTable = cmd_gen.bulkCmd(
         snmp['auth_data'],
         snmp['transport_target'],
-        0,
+        1,  # nonRepeaters must be 1 to work on Cisco!
         25,
         OID,
     )
@@ -201,6 +202,8 @@ def get_switch_model(snmp):
         return'extreme'
     elif 'Dell Networking OS' in model:
         return 'force10_mxl'
+    elif 'Cisco IOS Software' in model:
+        return 'cisco_ios'
 
     print('Unknown switch model {}'.format(model), file=sys.stderr)
     return None
@@ -266,6 +269,12 @@ def standarize_portname(port_name):
     if re.match('\A(Gi|Te)[0-9]/[0-9]/[0-9]+\Z', port_name):
         # Dell normal port
         return port_name.replace('/', '_')
+    if re.match('\A(Fa|Gi|Tu)[0-9]/[0-9]+\Z', port_name):
+        # Cisco ports
+        return port_name.replace('/', '_')
+    if re.match('\A(Fa|Gi|Tu)[0-9]+\Z', port_name):
+        # Cisco tunnels
+        return port_name
     g = re.match(
         '\A(TenGigabitEthernet|fortyGigE) ([0-9]+/[0-9]+)\Z',
         port_name
