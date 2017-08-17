@@ -202,7 +202,7 @@ def get_switch_model(snmp):
     elif 'Dell Networking OS' in model:
         return 'force10_mxl'
 
-    print('Unknown switch model', file=sys.stderr)
+    print('Unknown switch model {}'.format(model), file=sys.stderr)
     return None
 
 
