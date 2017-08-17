@@ -267,16 +267,13 @@ def standarize_portname(port_name):
         # Dell normal port
         return port_name.replace('/', '_')
     g = re.match(
-        '\A((TenGigabitEthernet|fortyGigE) ([0-9]+/[0-9]+))|'
-        '(Port-channel [0-9]+)\Z',
+        '\A(TenGigabitEthernet|fortyGigE) ([0-9]+/[0-9]+)\Z',
         port_name
     )
     if g:
         # Force 10 MXL port
-        if g.group(3):
-            return g.group(3).replace('/', '_').replace(' ', '_')
-        if g.group(4):
-            return g.group(4).replace(' ', '_')
+        return g.group(2).replace('/', '_')
+
     return None
 
 
