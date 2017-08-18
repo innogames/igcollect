@@ -26,36 +26,36 @@ import sys
 cmd_gen = cmdgen.CommandGenerator()
 
 OIDS = {
-    'switch_model': '.1.3.6.1.2.1.1.1.0',
-    'port_name': '.1.3.6.1.2.1.31.1.1.1.1',
+    'switch_model': '1.3.6.1.2.1.1.1.0',
+    'port_name': '1.3.6.1.2.1.31.1.1.1.1',
     'port_state': '1.3.6.1.2.1.2.2.1.8',
 }
 
 LAGG_OIDS = {
     'procurve': '.1.3.6.1.4.1.11.2.14.11.5.1.7.1.3.1.1.8',
-    'powerconnect': '.1.2.840.10006.300.43.1.2.1.1.12',
+    'powerconnect': '1.2.840.10006.300.43.1.2.1.1.12',
 }
 
 CPU_OIDS = {
-    'procurve': '.1.3.6.1.4.1.11.2.14.11.5.1.9.6.1.0',
-    'powerconnect': '.1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.9.0',
-    'extreme': '.1.3.6.1.4.1.1916.1.32.1.2.0',
+    'procurve': '1.3.6.1.4.1.11.2.14.11.5.1.9.6.1.0',
+    'powerconnect': '1.3.6.1.4.1.674.10895.5000.2.6132.1.1.1.1.4.9.0',
+    'extreme': '1.3.6.1.4.1.1916.1.32.1.2.0',
     # 1-minute average for the 1st cpu of stack because we don't stack them.
     'force10_mxl': '1.3.6.1.4.1.6027.3.26.1.4.4.1.4.2.1.1',
     'cisco_ios': '1.3.6.1.4.1.9.9.109.1.1.1.1.4.1',
 }
 
 COUNTERS = {
-    'bytesIn': '.1.3.6.1.2.1.31.1.1.1.6',
-    'bytesOut': '.1.3.6.1.2.1.31.1.1.1.10',
-    'pktsIn': '.1.3.6.1.2.1.31.1.1.1.7',
-    'pktsOut': '.1.3.6.1.2.1.31.1.1.1.11',
-    'brdPktsIn': '.1.3.6.1.2.1.31.1.1.1.9',
-    'brdPktsOut': '.1.3.6.1.2.1.31.1.1.1.13',
-    'ifInErrors': '.1.3.6.1.2.1.2.2.1.14',
-    'ifOutErrors': '.1.3.6.1.2.1.2.2.1.20',
-    'ifInDiscards': '.1.3.6.1.2.1.2.2.1.13',
-    'ifOutDiscards': '.1.3.6.1.2.1.2.2.1.19',
+    'bytesIn': '1.3.6.1.2.1.31.1.1.1.6',
+    'bytesOut': '1.3.6.1.2.1.31.1.1.1.10',
+    'pktsIn': '1.3.6.1.2.1.31.1.1.1.7',
+    'pktsOut': '1.3.6.1.2.1.31.1.1.1.11',
+    'brdPktsIn': '1.3.6.1.2.1.31.1.1.1.9',
+    'brdPktsOut': '1.3.6.1.2.1.31.1.1.1.13',
+    'ifInErrors': '1.3.6.1.2.1.2.2.1.14',
+    'ifOutErrors': '1.3.6.1.2.1.2.2.1.20',
+    'ifInDiscards': '1.3.6.1.2.1.2.2.1.13',
+    'ifOutDiscards': '1.3.6.1.2.1.2.2.1.19',
 }
 
 
@@ -157,16 +157,23 @@ def get_snmp_table(snmp, OID):
         Returned is a dictionary mapping the last number of OID (converted to
         Python integer) to value (converted to int or str).
     """
-
     ret = {}
     errorIndication, errorStatus, errorIndex, varBindTable = cmd_gen.bulkCmd(
         snmp['auth_data'],
         snmp['transport_target'],
-        1,  # nonRepeaters must be 1 to work on Cisco!
+        0,  # nonRepeaters
         25,
         OID,
     )
     for varBind in varBindTable:
+        # Oh the joy of pysnmp library!
+        # When the nonrepeaters value above is 0, we might get objects from
+        # another snmp tree on some hardware, for example from cisco routers.
+        # we can set it to 1 but then we have high cpu usage. So keep it 0
+        # and manually check if we are still in the same tree.
+        # OIDs we query for must not start with a dot.
+        if not str(varBind[0][0]).startswith(OID):
+            break
         if errorIndication:
             raise SwitchException('Unable to get SNMP value: {}'.
                                   format(errorIndication))
