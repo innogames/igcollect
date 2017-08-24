@@ -14,7 +14,8 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from time import time
 
-import psycopg2
+from psycopg2 import connect
+from psycopg2.extensions import ISOLATION_LEVEL_REPEATABLE_READ
 from psycopg2.extras import RealDictCursor
 
 
@@ -38,9 +39,9 @@ def main():
     items = []
     now = str(int(time()))
 
-    with psycopg2.connect(database=args.dbname) as conn:
+    with connect(database=args.dbname) as conn:
         conn.set_session(
-            isolation_level=psycopg2.extensions.ISOLATION_LEVEL_SERIALIZABLE,
+            isolation_level=ISOLATION_LEVEL_REPEATABLE_READ,
             readonly=True,
         )
 
