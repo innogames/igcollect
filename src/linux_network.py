@@ -39,7 +39,8 @@ def main():
             continue
         for key, name in metric_names:
             print('{}.{}.{} {} {}'.format(
-                args.prefix, interface, name, nd[interface][key], now
+                args.prefix, interface.replace('.', '_'),
+                name, nd[interface][key], now
             ))
 
 
