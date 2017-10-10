@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
-# igcollect - smartmontools
+# igcollect - smart
 #
-# Copyright (c) 2016, InnoGames GmbH
+# Copyright (c) 2017, InnoGames GmbH
 #
 
 from argparse import ArgumentParser
@@ -12,7 +12,7 @@ from time import time
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='smartmontools')
+    parser.add_argument('--prefix', default='smart')
     return parser.parse_args()
 
 
