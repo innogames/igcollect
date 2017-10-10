@@ -2,7 +2,7 @@
 #
 # igcollect - Linux volume manager
 #
-# Copyright (c) 2016, InnoGames GmbH
+# Copyright (c) 2017, InnoGames GmbH
 #
 
 from argparse import ArgumentParser
