@@ -43,6 +43,7 @@ CPU_OIDS = {
     # 1-minute average for the 1st cpu of stack because we don't stack them.
     'force10_mxl': '1.3.6.1.4.1.6027.3.26.1.4.4.1.4.2.1.1',
     'cisco_ios': '1.3.6.1.4.1.9.9.109.1.1.1.1.4.1',
+    'netiron_mlx': '1.3.6.1.4.1.1991.1.1.2.11.1.1.5.1.1.1',
 }
 
 COUNTERS = {
@@ -211,6 +212,8 @@ def get_switch_model(snmp):
         return 'force10_mxl'
     elif 'Cisco IOS Software' in model:
         return 'cisco_ios'
+    elif 'Brocade NetIron MLX' in model:
+        return 'netiron_mlx'
 
     print('Unknown switch model {}'.format(model), file=sys.stderr)
     return None
@@ -289,6 +292,9 @@ def standarize_portname(port_name):
     if g:
         # Force 10 MXL port
         return g.group(2).replace('/', '_')
+    if re.match('\Aethernet[0-9]+/[0-9]+\Z', port_name):
+        # Netiron ports
+        return port_name.replace('/', '_')
 
     return None
 
