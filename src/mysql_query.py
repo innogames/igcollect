@@ -66,7 +66,7 @@ def main():
             items.extend(get_column_data(rows))
 
     for key, value in items:
-        print(args.prefix + '.' + key, value, now)
+        print(args.prefix + '.' + str(key), value, now)
 
     cur.close()
     cnx.close()
