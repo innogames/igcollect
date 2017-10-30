@@ -14,15 +14,6 @@ from argparse import ArgumentParser
 from time import time
 
 from mysql.connector import connect
-from mysql.connector.cursor import MySQLCursor
-
-
-class MySQLCursorDict(MySQLCursor):
-    def _row_to_python(self, rowdata, desc=None):
-        row = super(MySQLCursorDict, self)._row_to_python(rowdata, desc)
-        if row:
-            return dict(zip(self.column_names, row))
-        return None
 
 
 def parse_args():
@@ -54,12 +45,12 @@ def main():
         host=args.host,
         db=args.dbname,
     )
-    cur = cnx.cursor(cursor_class=MySQLCursorDict)
+    cur = cnx.cursor()
     for query in args.queries:
         cur.execute(query)
         if not cur.rowcount:
             raise Exception('No result')
-        rows = cur.fetchall()
+        rows = [dict(zip(cur.column_names, r)) for r in cur.fetchall()]
         if args.key_column:
             items.extend(get_row_data(rows, args.key_column))
         else:
