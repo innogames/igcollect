@@ -42,7 +42,7 @@ def read_ha_proxy_stats(haproxy_stats_socket):
     try:
         conn.connect(haproxy_stats_socket)
         conn.sendall('show stat\r\n')
-        data = conn.recv(BUFFER_SIZE, MSG_DONTWAIT)
+        data = conn.recv(BUFFER_SIZE)
         while len(data) % BUFFER_SIZE == 0:
             try:
                 data += conn.recv(BUFFER_SIZE, MSG_DONTWAIT)
