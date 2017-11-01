@@ -5,9 +5,8 @@
 # Copyright (c) 2016 InnoGames GmbH
 #
 
-
 from argparse import ArgumentParser
-from subprocess import Popen, PIPE
+from subprocess import check_output
 from time import time
 
 
@@ -19,12 +18,10 @@ def parse_args():
 
 def main():
     args = parse_args()
-    redis_info = Popen(('redis-cli', '-a', redis_pwd(), 'info'),
-                       stdout=PIPE).stdout.read()
-    redis_info = redis_info.splitlines()
+    redis_info = check_output(['redis-cli', '-a', redis_pwd(), 'info'])
 
     redis_stats = {}
-    for x in redis_info:
+    for x in redis_info.splitlines():
         if x.find(':') != -1:
             key, value = x.split(':')
             redis_stats[key] = value
