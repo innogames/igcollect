@@ -10,18 +10,10 @@
 #
 from __future__ import print_function
 
-import mysql.connector
-
 from argparse import ArgumentParser
 from time import time
 
-
-class MySQLCursorDict(mysql.connector.cursor.MySQLCursor):
-    def _row_to_python(self, rowdata, desc=None):
-        row = super(MySQLCursorDict, self)._row_to_python(rowdata, desc)
-        if row:
-            return dict(zip(self.column_names, row))
-        return None
+from mysql.connector import connect
 
 
 def parse_args():
@@ -35,7 +27,8 @@ def parse_args():
         '--query',
         required=True,
         action='append',
-        dest='queries', )
+        dest='queries',
+    )
     parser.add_argument('--key-column')
     return parser.parse_args()
 
@@ -46,24 +39,25 @@ def main():
     items = []
     now = str(int(time()))
 
-    cnx = mysql.connector.connect(
+    cnx = connect(
         user=args.user,
         password=args.password,
         host=args.host,
-        db=args.dbname, 
-        )
-    cur = cnx.cursor(cursor_class=MySQLCursorDict)
+        db=args.dbname,
+    )
+    cur = cnx.cursor()
     for query in args.queries:
         cur.execute(query)
         if not cur.rowcount:
             raise Exception('No result')
-        rows = cur.fetchall()
-        items.extend(
-            get_row_data(rows, args.key_column)
-            if args.key_column else get_column_data(rows))
+        rows = [dict(zip(cur.column_names, r)) for r in cur.fetchall()]
+        if args.key_column:
+            items.extend(get_row_data(rows, args.key_column))
+        else:
+            items.extend(get_column_data(rows))
 
     for key, value in items:
-        print(args.prefix + '.' + key, value, now)
+        print(args.prefix + '.' + str(key), value, now)
 
     cur.close()
     cnx.close()
