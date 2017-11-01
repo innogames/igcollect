@@ -5,7 +5,7 @@
 # Copyright (c) 2017 InnoGames GmbH
 #
 
-from socket import socket, AF_UNIX, SOCK_STREAM
+from socket import socket, AF_UNIX, SOCK_STREAM, MSG_DONTWAIT
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE
 from time import time
@@ -42,10 +42,10 @@ def read_ha_proxy_stats(haproxy_stats_socket):
     try:
         conn.connect(haproxy_stats_socket)
         conn.sendall('show stat\r\n')
-        data = conn.recv(BUFFER_SIZE, socket.MSG_DONTWAIT)
+        data = conn.recv(BUFFER_SIZE, MSG_DONTWAIT)
         while len(data) % BUFFER_SIZE == 0:
             try:
-                data += conn.recv(BUFFER_SIZE, socket.MSG_DONTWAIT)
+                data += conn.recv(BUFFER_SIZE, MSG_DONTWAIT)
             except socket.error:
                 break
         return data
