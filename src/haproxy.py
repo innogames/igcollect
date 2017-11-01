@@ -25,7 +25,7 @@ def parse_args():
 def main():
     args = parse_args()
     template = args.prefix + '.{}.{}.{} {} ' + str(int(time()))
-    haproxy_info = read_ha_proxy_stats(args.haproxy_stats_socket)
+    haproxy_info = read_ha_proxy_stats(args.haproxy_stats_socket).decode()
     haproxy_info = haproxy_info.splitlines()
     header = haproxy_info[0].replace(' ', '_').split(',')
     for line in haproxy_info[1:-1]:
@@ -41,7 +41,7 @@ def read_ha_proxy_stats(haproxy_stats_socket):
     conn = socket(AF_UNIX, SOCK_STREAM)
     try:
         conn.connect(haproxy_stats_socket)
-        conn.sendall('show stat\r\n')
+        conn.sendall(b'show stat\r\n')
         data = conn.recv(BUFFER_SIZE)
         while len(data) % BUFFER_SIZE == 0:
             try:
