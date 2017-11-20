@@ -27,14 +27,13 @@ def main():
     }
     cpufactor = 1.0
 
-    with open('/proc/cpuinfo') as fd:
-        cpu_data = fd.readlines(1024)
-
-    for line in cpu_data:
-        factor = line.split(':', 1)[1].strip()
-        if factor in factors:
-            cpufactor = factors[factor]
-            break
+    with open('/proc/cpuinfo', 'r') as fp:
+        for line in fp:
+            if line.startswith('model name'):
+                factor = line.split(':', 1)[1].strip()
+                if factor in factors:
+                    cpufactor = factors[factor]
+                    break
 
     now = str(int(time()))
     print('{}.perffactor {} {}'.format(args.prefix, cpufactor, now))

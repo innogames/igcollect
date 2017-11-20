@@ -19,8 +19,8 @@ def parse_args():
 def main():
     args = parse_args()
     mountpoints = []
-    with open('/proc/mounts', 'r') as file_descriptor:
-        for line in file_descriptor.readlines():
+    with open('/proc/mounts', 'r') as fp:
+        for line in fp:
             a, mountpoint, fstype, a = line.split(' ', 3)
             if fstype in ['ext2', 'ext3', 'ext4', 'xfs']:
                 mountpoints.append(mountpoint)
