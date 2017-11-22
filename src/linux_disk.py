@@ -43,9 +43,6 @@ def main():
 
 def get_diskstats_dict():
     """Return a dictionary made from /proc/diskstats"""
-    dsd = open('/proc/diskstats', 'r')
-    diskstats_data = dsd.readlines(1024)
-    dsd.close()
 
     diskstats_dict = {}
     header = ['major', 'minor', 'name',
@@ -55,14 +52,15 @@ def get_diskstats_dict():
 
     header.pop(2)  # Just to be able to have also the name in the header
 
-    for line in diskstats_data:
-        # Here we have to handle some kind of disk first the name than
-        # the counters as mentioned in the header.
-        x = line.strip().split()
-        disk_name = x.pop(2)
-        diskstats_dict[disk_name] = {}
-        for name in header:
-            diskstats_dict[disk_name][name] = x.pop(0)
+    with open('/proc/diskstats', 'r') as fp:
+        for line in fp:
+            # Here we have to handle some kind of disk first the name than
+            # the counters as mentioned in the header.
+            x = line.strip().split()
+            disk_name = x.pop(2)
+            diskstats_dict[disk_name] = {}
+            for name in header:
+                diskstats_dict[disk_name][name] = x.pop(0)
 
     return diskstats_dict
 

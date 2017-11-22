@@ -47,32 +47,30 @@ def main():
 def get_netdev_dict():
     """Return a dictionary made from /proc/net/dev"""
 
-    with open('/proc/net/dev', 'r') as nd:
-        netdev_data = nd.readlines(1024)
-
     netdev_dict = {}
     header = []
 
-    for line in netdev_data:
-        if 'Inter' in line:
-            # Header 1
-            pass
-        elif ' face |bytes' in line:
-            # Header 2
-            a, rx_header, tx_header = line.split('|')
-            for i in rx_header.split():
-                header.append('rx_' + i)
-            for i in tx_header.split():
-                header.append('tx_' + i)
-        else:
-            # We have to handle some kind of interface.  It should be
-            # first the interface name, than the counters mentioned
-            # in the header.
-            x = line.strip().split()
-            if_name = x.pop(0).strip(' :')
-            netdev_dict[if_name] = {}
-            for i in header:
-                netdev_dict[if_name][i] = x.pop(0)
+    with open('/proc/net/dev', 'r') as fp:
+        for line in fp:
+            if 'Inter' in line:
+                # Header 1
+                pass
+            elif ' face |bytes' in line:
+                # Header 2
+                a, rx_header, tx_header = line.split('|')
+                for i in rx_header.split():
+                    header.append('rx_' + i)
+                for i in tx_header.split():
+                    header.append('tx_' + i)
+            else:
+                # We have to handle some kind of interface.  It should be
+                # first the interface name, than the counters mentioned
+                # in the header.
+                x = line.strip().split()
+                if_name = x.pop(0).strip(' :')
+                netdev_dict[if_name] = {}
+                for i in header:
+                    netdev_dict[if_name][i] = x.pop(0)
 
     return netdev_dict
 
