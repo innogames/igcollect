@@ -56,7 +56,7 @@ def main():
         '   WHERE d.datname = %s'
     ), (args.dbname,))
 
-    # System table statistics
+    # Table statistics
     execute_and_print(conn, template.format('tables'), (
         'SELECT sum(seq_scan) AS seq_scan,'
         '       sum(seq_tup_read) AS seq_tup_read,'
