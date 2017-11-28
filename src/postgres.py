@@ -29,11 +29,11 @@ def main():
         readonly=True,
     )
 
-    # To be formatted 3 times
-    template = '{}.{{}}.{{{{}}}} {{{{}}}} {}'.format(args.prefix, int(time()))
+    # To be formatted 2 times
+    template = '{}.{{}}.{{}} {{}} {}'.format(args.prefix, int(time()))
 
     # Database statistics
-    execute_and_print(conn, template.format('database'), (
+    for line in execute(conn, (
         'SELECT pg_database_size(d.oid) as size,'
         '       s.numbackends,'
         '       s.xact_commit,'
@@ -54,10 +54,13 @@ def main():
         '   FROM pg_database AS d'
         '       JOIN pg_stat_database AS s USING (datname)'
         '   WHERE d.datname = %s'
-    ), (args.dbname,))
+    ), (args.dbname,)):
+        for key, value in line.items():
+            if value is not None:
+                print(template.format('database', key, value))
 
     # Table statistics
-    execute_and_print(conn, template.format('tables'), (
+    for line in execute(conn, (
         'SELECT sum(seq_scan) AS seq_scan,'
         '       sum(seq_tup_read) AS seq_tup_read,'
         '       sum(idx_scan) AS idx_scan,'
@@ -73,28 +76,26 @@ def main():
         '       sum(analyze_count) AS analyze_count,'
         '       sum(autoanalyze_count) AS autoanalyze_count'
         '   FROM pg_stat_all_tables'
-    ))
+    )):
+        for key, value in line.items():
+            if value is not None:
+                print(template.format('tables', key, value))
 
     # Connection counts
-    execute_and_print(conn, template.format('activity'), (
-        "SELECT count(*) FILTER (WHERE state LIKE %s) AS active,"
-        "       count(*) FILTER (WHERE state LIKE %s) AS idle,"
-        "       count(*) FILTER (WHERE state LIKE %s) AS idle_in_transaction"
+    for line in execute(conn, (
+        "SELECT state, count(*)"
         '   FROM pg_stat_activity'
-    ), ('active%', 'idle%', 'idle in transaction%'))
+        '   GROUP BY state'
+    )):
+        if line['state']:
+            print(template.format('activity', line['state'], line['count']))
 
 
-def execute_and_print(conn, template, query, query_vars=()):
+def execute(conn, query, query_vars=()):
     """Execute given query and return fetched results"""
     with conn.cursor(cursor_factory=RealDictCursor) as cursor:
         cursor.execute(query, query_vars)
-        result = cursor.fetchall()
-
-    for line in result:
-        for key, value in line.items():
-            if value is not None:
-                print(template.format(key, value))
-        break
+        return cursor.fetchall()
 
 
 if __name__ == '__main__':
