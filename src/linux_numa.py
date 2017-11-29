@@ -9,6 +9,20 @@ from argparse import ArgumentParser
 from time import time
 
 
+NUMA_NODES_PATH = '/sys/devices/system/node/online'
+NUMA_STAT_PATH = '/sys/devices/system/node/node{}/{}'
+CPU_STAT_PATH = '/proc/stat'
+CPU_STAT_KEYS = [
+    'user',
+    'nice',
+    'system',
+    'idle',
+    'iowait',
+    'irq',
+    'softirq',
+]
+
+
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='numa')
@@ -17,41 +31,70 @@ def parse_args():
 
 def main():
     args = parse_args()
-    path = '/sys/devices/system/node/node{}/{}'
+    nodes = get_numa_nodes()
     template = args.prefix + '.node{}.{}.{} {} ' + str(int(time()))
+    cpu_stats = dict(get_cpu_stats())
 
-    for node in get_numa_nodes():
-        with open(path.format(node, 'numastat')) as fd:
-            for line in fd:
-                key, value = line.strip().split(None, 1)
-                print(template.format(node, 'stat', key, value))
+    for node in nodes:
+        cpu_cores = list(get_cpulist(node))
+        for index, key in enumerate(CPU_STAT_KEYS):
+            print(template.format(node, 'cpu', key, sum(
+                int(cpu_stats[c][index]) for c in cpu_cores
+            )))
 
-        with open(path.format(node, 'meminfo')) as fd:
-            for line in fd:
-                line_split = line.strip().split()
-                key = line_split[2].rstrip(':')
-                value = int(line_split[3])
-                print(template.format(node, 'memory', key, value))
-
-
-def parse_split_file(filename):
-    """Utility to read and parse a comma delimited file"""
-    with open(filename) as fd:
-        return [line.strip().split(None, 1) for line in fd]
+        for key, value in get_numastat(node):
+            print(template.format(node, 'stat', key, value))
+        for key, value in get_meminfo(node):
+            print(template.format(node, 'memory', key, value))
 
 
 def get_numa_nodes():
-    # Does not support offline nodes separated with ','
-    with open('/sys/devices/system/node/online') as fd:
-        line = fd.readline().rstrip()
+    with open(NUMA_NODES_PATH) as fd:
+        for node in parse_ranges(fd.read()):
+            yield node
 
-    # Range of nodes
-    if '-' not in line:
-        # We don't need stats for servers with only one node
-        return []
 
-    # Max is exclusive in range so plus 1
-    return range(0, int(line.split('-')[1]) + 1)
+def get_cpu_stats():
+    with open(CPU_STAT_PATH) as fd:
+        for line in fd:
+            if not line.startswith('cpu'):
+                continue
+            cells = line.split()
+            core = cells[0][len('cpu'):]
+            if not core:
+                continue
+            yield int(core), cells[1:]
+
+
+def get_cpulist(node):
+    with open(NUMA_STAT_PATH.format(node, 'cpulist')) as fd:
+        for cpu_core in parse_ranges(fd.read()):
+            yield cpu_core
+
+
+def get_numastat(node):
+    with open(NUMA_STAT_PATH.format(node, 'numastat')) as fd:
+        for line in fd:
+            yield line.strip().split(None, 1)
+
+
+def get_meminfo(node):
+    with open(NUMA_STAT_PATH.format(node, 'meminfo')) as fd:
+        for line in fd:
+            line_split = line.strip().split()
+            yield line_split[2].rstrip(':'), int(line_split[3])
+
+
+def parse_ranges(cvs):
+    """Expand 0-3,7-11 syntax to explicit list of numbers"""
+    for item in cvs.split(','):
+        item_split = item.split('-', 1)
+        start = int(item_split[0])
+        end = int(item_split[-1])
+
+        # Max is exclusive in range so plus 1
+        for elem in range(start, end + 1):
+            yield elem
 
 
 if __name__ == '__main__':
