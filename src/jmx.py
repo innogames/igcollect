@@ -16,19 +16,21 @@ def parse_args():
     parser.add_argument('--prefix', default='jmx')
     parser.add_argument('--ports', default=[], nargs='+')
     parser.add_argument('--names', default=[], nargs='+')
+    parser.add_argument('--thread-prefixes', default=[], nargs='+')
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     jar_path = dirname(abspath(__file__)) + '/../../share/java/jmxcollect.jar'
+    thread_prefixes = ','.join(args.thread_prefixes)
 
     if len(args.ports) != len(args.names):
         print('Length of ports must be the same as length of names')
         exit(1)
 
     exit_code = 0
-    for index, name in enumerate(args.names):
+    for name, port in zip(args.names, args.ports):
         proc = Popen([
             'java',
             '-jar',
@@ -38,10 +40,11 @@ def main():
             '--prefix',
             args.prefix + '.' + name,
             '--port',
-            args.ports[index],
+            port,
+            '--thread-prefixes',
+            thread_prefixes,
         ])
-        if proc.wait() > exit_code:
-            exit_code = proc.returncode
+        exit_code = max(proc.wait(), exit_code)
 
     exit(exit_code)
 
