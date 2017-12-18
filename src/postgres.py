@@ -85,7 +85,8 @@ def main():
         '   GROUP BY state'
     )):
         if line['state']:
-            print(template.format('activity', line['state'], line['count']))
+            key = line['state'].replace(' ', '_')
+            print(template.format('activity', key, line['count']))
 
 
 def execute(conn, query, query_vars=()):
