@@ -14,8 +14,9 @@ from sys import exit
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='jmx')
-    parser.add_argument('--ports', default=[], nargs='+')
-    parser.add_argument('--names', default=[], nargs='+')
+    parser.add_argument('--port', type=int, default=9010)
+    parser.add_argument('--ports', default=[], nargs='+')   # XXX Deprecated
+    parser.add_argument('--names', default=[], nargs='+')   # XXX Deprecated
     parser.add_argument('--thread-prefixes', default=[], nargs='+')
     return parser.parse_args()
 
@@ -25,12 +26,28 @@ def main():
     jar_path = dirname(abspath(__file__)) + '/../../share/java/jmxcollect.jar'
     thread_prefixes = ','.join(args.thread_prefixes)
 
-    if len(args.ports) != len(args.names):
-        print('Length of ports must be the same as length of names')
-        exit(1)
+    if args.names:
+        if len(args.ports) != len(args.names):
+            print('Length of ports must be the same as length of names')
+            exit(1)
 
-    exit_code = 0
-    for name, port in zip(args.names, args.ports):
+        exit_code = 0
+        for name, port in zip(args.names, args.ports):
+            proc = Popen([
+                'java',
+                '-jar',
+                jar_path,
+                '--host',
+                'localhost',
+                '--prefix',
+                args.prefix + '.' + name,
+                '--port',
+                port,
+                '--thread-prefixes',
+                thread_prefixes,
+            ])
+            exit_code = max(proc.wait(), exit_code)
+    else:
         proc = Popen([
             'java',
             '-jar',
@@ -38,13 +55,13 @@ def main():
             '--host',
             'localhost',
             '--prefix',
-            args.prefix + '.' + name,
+            args.prefix,
             '--port',
-            port,
+            str(args.port),
             '--thread-prefixes',
             thread_prefixes,
         ])
-        exit_code = max(proc.wait(), exit_code)
+        exit_code = proc.wait()
 
     exit(exit_code)
 
