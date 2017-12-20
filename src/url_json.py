@@ -11,7 +11,7 @@ def parse_args():
     parser.add_argument('--url', default='http://localhost/')
     parser.add_argument(
         '--key',
-        action='append',
+        nargs='+',
         dest='keys', )
     return parser.parse_args()
 
@@ -21,7 +21,7 @@ def main():
     response = urlopen(args.url)
     data = json.loads(response.read().decode('utf-8'))
 
-    template = args.prefix + '.{} {}' + str(int(time()))
+    template = args.prefix + '.{} {} ' + str(int(time()))
 
     for key, value in data.items():
         if key in args.keys or not args.keys:
