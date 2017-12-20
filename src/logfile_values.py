@@ -9,7 +9,7 @@ logfile_values.py -- a python script to find metrics values in log file
 
 This script is using last line of log file to get metric value by column number
 
-python logfile_values.py --metric="metric1:1" --metric="metric2:2" ...
+python logfile_values.py --metric "metric1:1" "metric2:2" ...
 """
 
 from argparse import ArgumentParser, ArgumentTypeError
@@ -30,7 +30,7 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='logfile_values')
     parser.add_argument('--file', default='/var/log/messages')
-    parser.add_argument('--metric', type=Metric, action='append')
+    parser.add_argument('--metric', type=Metric, nargs='+')
     return parser.parse_args()
 
 
@@ -41,8 +41,8 @@ def main():
         for line in f:
             pass
         last_line = line.split()
-    for m in args.metric:
-        print(template.format(m.name, last_line[m.column]))
+    for metric in args.metric:
+        print(template.format(metric.name, last_line[metric.column]))
 
 
 if __name__ == '__main__':
