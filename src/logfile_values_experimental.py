@@ -15,6 +15,7 @@ import re
 import time
 import os
 import gzip
+import logging
 
 from argparse import ArgumentParser, ArgumentTypeError
 from datetime import timedelta
@@ -25,8 +26,10 @@ class Metric:
         if ':' not in arg:
             raise ArgumentTypeError('Argument must have ":"')
         parts = arg.split(':')
-        if len(parts) > 4:
-            raise ValueError('Too many options')
+        if len(parts) != 4 and len(parts) != 2:
+            raise ValueError('Wring number of options')
+
+        # Accepts 2 or 4 options. If 2 then function and period are NULL
         parts += [None] * (4 - len(parts))
         self.name, column, function, period = parts
         if period:
@@ -38,6 +41,7 @@ class Metric:
         self.column = int(column)
         self.function = function
         self.period = period
+        # Here is container for metric values
         self.values = []
         self.last_value = 0
 
@@ -56,7 +60,7 @@ class Metric:
                 return timedelta(days=value).total_seconds()
         else:
             return 0
-      
+
     def get_median(self):
         l = sorted(self.values)
         i = len(l)
@@ -110,52 +114,99 @@ def parse_args():
     parser.add_argument('--metric', type=Metric, nargs='+')
     parser.add_argument('--time_format', default='%Y-%m-%dT%H:%M:%S')
     parser.add_argument('--arch', action='store_true')
+    parser.add_argument('--debug', '-d', action='store_true')
     return parser.parse_args()
+
+
+#https://stackoverflow.com/questions/2301789
+def reverse_readline(filename, buf_size=8192):
+    """a generator that returns the lines of a file in reverse order"""
+    with open(filename) as fh:
+        segment = None
+        offset = 0
+        fh.seek(0, os.SEEK_END)
+        file_size = remaining_size = fh.tell()
+        while remaining_size > 0:
+            offset = min(file_size, offset + buf_size)
+            fh.seek(file_size - offset)
+            buffer = fh.read(min(remaining_size, buf_size))
+            remaining_size -= buf_size
+            lines = buffer.split('\n')
+            # the first line of the buffer is probably not a complete line so
+            # we'll save it and append it to the last line of the next buffer
+            # we read
+            if segment is not None:
+                # if the previous chunk starts right from the beginning of line
+                # do not concact the segment to the last line of new chunk
+                # instead, yield the segment first
+                if buffer[-1] is not '\n':
+                    lines[-1] += segment
+                else:
+                    yield segment
+            segment = lines[0]
+            for index in range(len(lines) - 1, 0, -1):
+                if len(lines[index]):
+                    yield lines[index]
+        # Don't yield None if the file was empty
+        if segment is not None:
+            yield segment
+
 
 def convert_to_timestamp(time_str, time_format):
     try:
         timestamp = int(
-            time.mktime(
-                time.strptime(time_str.split("+")[0], time_format)))
+            time.mktime(time.strptime(time_str.split("+")[0], time_format)))
     except ValueError:
         try:
-            timestamp = int(time_str)  # some old gen_time.logs are already in unixtime
+            timestamp = int(
+                time_str) 
         except ValueError:
             timestamp = int(
                 time.mktime(
                     time.strptime('-'.join(time_str.split("-")[:-1]),
-                                    time_format)))
+                                  time_format)))
         pass
     return int(timestamp)
-
-def read_metric_values(file, metric, time_format):
-    for line in file:
-        fields = line.split()
-        fields[0] = convert_to_timestamp(fields[0], time_format)
-        if fields[0] > (int(time.time()) - metric.get_timeshift()):
-            metric.values.append(int(fields[metric.column]))
-    last_line = line.split()
-    metric.last_value = last_line[metric.column]
 
 
 def main():
     args = parse_args()
     file = args.file
 
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    logging.getLogger().addHandler(logging.StreamHandler())
     now = int(time.time())
     template = args.prefix + '.{} {} ' + str(now)
-    with open(file, 'r') as f:
-        for metric in args.metric:
-            read_metric_values(f, metric, args.time_format)
-            if args.arch:
-                dir_path = os.path.dirname(os.path.realpath(file))
-                archive_pattern = re.compile(r'{}\.\d+?\.gz'.format(file))
-                for root, dirs, files in os.walk(dir_path):
-                    for f in files:
-                        if archive_pattern.search(f):
-                            archive_file = os.path.join(root, f)
-                            with gzip.open(archive_file, 'rt', encoding='utf-8') as f:
-                                read_metric_values(f, metric, args.time_format)
+    for metric in args.metric:
+        # Read from the end of file until the timestamp is satisfying conditions
+        for line in reverse_readline(file):
+            fields = line.split()
+            fields[0] = convert_to_timestamp(fields[0], args.time_format)
+            if fields[0] > (int(time.time()) - metric.get_timeshift()):
+                metric.values.append(int(fields[metric.column]))
+        # Check archive files for the presence of a timestamp satisfying condition
+        if args.arch:
+            dir_path = os.path.dirname(os.path.realpath(file))
+            archive_pattern = re.compile(r'{}\.\d+?\.gz'.format(file))
+            for root, dirs, files in os.walk(dir_path):
+                for f in files:
+                    print(f)
+                    if archive_pattern.search(f):
+                        archive_file = os.path.join(root, f)
+                        logging.getLogger().debug(
+                            'Parsing archive file: {}'.
+                            format(f))
+                        with gzip.open(f, 'rt', encoding='utf-8') as fh:
+                            for line in fh:
+                                fields = line.split()
+                                fields[0] = convert_to_timestamp(
+                                    fields[0], args.time_format)
+                                if fields[0] > (int(time.time()) -
+                                                metric.get_timeshift()):
+                                    metric.values.append(
+                                        int(fields[metric.column]))
 
     for metric in args.metric:
         print(template.format(metric.name, metric.get_metric_value()))
