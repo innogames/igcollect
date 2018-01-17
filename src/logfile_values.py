@@ -77,16 +77,19 @@ class Metric:
         ]
         result = 0
         for index, value in enumerate(arr):
-            if value.isdigit() and result == 0:
-                result += float(fields[int(value)])
-            elif value == '/':
-                result = result / float(fields[int(arr[index + 1])])
-            elif value == '*':
-                result = result * float(fields[int(arr[index + 1])])
-            elif value == '+':
-                result = result + float(fields[int(arr[index + 1])])
-            elif value == '-':
-                result = result - float(fields[int(arr[index + 1])])
+            try:
+                if value.isdigit() and result == 0:
+                    result += float(fields[int(value)])
+                elif value == '/':
+                    result = result / float(fields[int(arr[index + 1])])
+                elif value == '*':
+                    result = result * float(fields[int(arr[index + 1])])
+                elif value == '+':
+                    result = result + float(fields[int(arr[index + 1])])
+                elif value == '-':
+                    result = result - float(fields[int(arr[index + 1])])
+            except ZeroDivisionError:
+                result = 0
         return result
 
     def get_median(self):
