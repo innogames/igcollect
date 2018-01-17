@@ -43,38 +43,33 @@ class Metric:
         parts += [None] * (4 - len(parts))
         self.name, column, function, period = parts
         if period:
-            pattern = re.compile("^\d+[A-Za-z]{1,3}$")
+            pattern = re.compile('^\d+[A-Za-z]{1,3}$')
             if not pattern.match(period):
                 raise ArgumentTypeError('Period must have number and unit')
 
         self.column = column
         self.function = function
         self.period = period
-        # Here is container for metric values
-        self.values = []
+        self.values = []  # Container for metric values
         self.last_value = 0
-        self.start_timestamp = 0
-        self.end_timestamp = 0
         self.now = int(time.time())
 
     def get_timeshift(self):
         if self.period:
-            value = int(" ".join(re.findall("\d+", self.period.lower())))
-            unit = " ".join(re.findall("[a-z]+", self.period.lower()))
-            if unit == 's':
-                return timedelta(seconds=value).total_seconds()
-            if unit == 'min':
-                return timedelta(minutes=value).total_seconds()
-            if unit == 'h':
-                return timedelta(hours=value).total_seconds()
-            if unit == 'd':
-                return timedelta(days=value).total_seconds()
-        else:
-            return 0
+            units = [
+                ('s', 1),
+                ('min', 60),
+                ('h', 60 * 60),
+                ('d', 60 * 60 * 24),
+            ]
+            for unit, mul in units:
+                if self.period.lower().endswith(unit):
+                    return int(self.period[:-len(unit)].strip()) * mul
+        return 0
 
     def estimate_columns_value(self, fields):
         '''
-        Apply some arithmetic on several columnsif needed
+        Apply some arithmetic on several columns if needed
         Warning: Estimates regardless of arithmetics rules        
         '''
         arr = [
@@ -93,11 +88,6 @@ class Metric:
             elif value == '-':
                 result = result - float(fields[int(arr[index + 1])])
         return result
-
-    def get_duration(self):
-        '''Returns real duration when metric appeared in log file'''
-        duration = self.end_timestamp - self.start_timestamp
-        return duration
 
     def get_median(self):
         sorted_list = sorted(self.values)
@@ -128,11 +118,11 @@ class Metric:
         return self.last_value
 
     def get_frequency(self, v=0):
-        return self.get_count(v) / self.get_duration()
+        return self.get_count(v) / self.get_timeshift()
 
     def get_speed(self):
         # Speed :-/?
-        return self.get_sum() / self.get_duration()
+        return self.get_sum() / self.get_timeshift()
 
     def get_metric_value(self):
         if self.function:
@@ -159,23 +149,17 @@ def parse_args():
     return parser.parse_args()
 
 
-def return_metrics_values(line, metrics, time_format, columns_num):
-    values = []
+def get_metrics_values(line, metrics, time_format, columns_num):
     fields = line.split(' ')
-    timestamp = convert_to_timestamp(fields[0], time_format)
-    for metric in metrics:
-        if len(fields) != columns_num:
-            values.append(-1)
-        else:
+    if len(fields) == columns_num:
+        timestamp = convert_to_timestamp(fields[0], time_format)
+        for metric in metrics:
             if timestamp > metric.now - metric.get_timeshift():
-                # Getting highest ad lowest timestamp in file for metric
-                if metric.end_timestamp == 0:
-                    metric.end_timestamp = timestamp
-                elif timestamp < metric.end_timestamp:
-                    metric.start_timestamp = timestamp
                 value = metric.estimate_columns_value(fields)
-                values.append(value)
-    return values
+                metric.values.append(value)
+            else:
+                return False
+        return True
 
 
 def get_metrics_last_value(line, metrics):
@@ -217,19 +201,19 @@ def read_logfile_reverse(filename,
                 if buffer[-1] is not '\n':
                     lines[-1] += segment
                 else:
-                    yield return_metrics_values(segment, metrics, time_format,
-                                                columns_num)
+                    yield get_metrics_values(segment, metrics, time_format,
+                                             columns_num)
             segment = lines[0]
             for index in range(len(lines) - 1, 0, -1):
                 global_index += 1
                 if lines[index]:
-                    #if global_index == 1:
-                    # get_metrics_last_value(lines[index], metrics)
-                    yield return_metrics_values(lines[index], metrics,
-                                                time_format, columns_num)
+                    if global_index == 1:
+                        get_metrics_last_value(lines[index], metrics)
+                    yield get_metrics_values(lines[index], metrics,
+                                             time_format, columns_num)
 
     if segment is not None:
-        yield return_metrics_values(segment, metrics, time_format, columns_num)
+        yield get_metrics_values(segment, metrics, time_format, columns_num)
 
 
 def convert_to_timestamp(time_str, time_format):
@@ -267,10 +251,6 @@ def main():
         if not log_value:
             file_was_readed = log_value
             break
-        else:
-            for index, value in enumerate(log_value):
-                if value != -1:
-                    args.metric[index].values.append(value)
 
     # If the main file was read completely and there is arch flag then
     # check archive files for the presence of a timestamp satisfying condition
@@ -285,16 +265,9 @@ def main():
                         'Parsing archive file: {}'.format(f))
                     with gzip.open(archive_file, 'rt', encoding='utf-8') as fh:
                         for line in fh:
-                            fields = line.split()
-                            if len(fields) != 5:
-                                continue
-                            fields[0] = convert_to_timestamp(
-                                fields[0], args.time_format)
-                            for metric in args.metric:
-                                if fields[0] > (
-                                        metric.now - metric.get_timeshift()):
-                                    metric.values.append(
-                                        metric.estimate_columns_value(fields))
+                            get_metrics_values(line, args.metric,
+                                               args.time_format,
+                                               args.columns_num)
 
     for metric in args.metric:
         template = args.prefix + '.{} {} ' + str(metric.now)
