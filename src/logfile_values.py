@@ -128,15 +128,17 @@ class Metric:
         return self.get_sum() / self.get_timeshift()
 
     def get_metric_value(self):
-        if self.function:
-            if 'count_' in self.function:
-                if 'percentage' in self.function:
-                    return float(
-                        self.get_count_percentage(
-                            int(self.function.split('_')[1])))
-                return float(self.get_count(int(self.function.split('_')[1])))
-            return float(getattr(self, 'get_' + self.function)())
-        return float(self.get_last_value())
+        if self.values:
+            if self.function:
+                if 'count_' in self.function:
+                    if 'percentage' in self.function:
+                        return float(
+                            self.get_count_percentage(
+                                int(self.function.split('_')[1])))
+                    return float(self.get_count(int(self.function.split('_')[1])))
+                return float(getattr(self, 'get_' + self.function)())
+            return float(self.get_last_value())
+        return 0
 
 
 def parse_args():
