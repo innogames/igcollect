@@ -18,7 +18,8 @@ median, mean, sum, min, max, count, frequency, speed (??)
 count_100 - counts values > 100
 count_100_percentage - estimates percentage of values > 100
 
-python logfile_values.py  --metric "metric1:1:mean:1d" --metric "metric2:3:count:60s"
+python logfile_values.py --metric "metric1:1:mean:1d" \
+                         --metric "metric2:3:count:60s"
 
 """
 import re
@@ -28,7 +29,6 @@ import gzip
 import logging
 
 from argparse import ArgumentParser, ArgumentTypeError
-from datetime import timedelta
 
 
 class Metric:
@@ -70,7 +70,7 @@ class Metric:
     def estimate_columns_value(self, fields):
         '''
         Apply some arithmetic on several columns if needed
-        Warning: Estimates regardless of arithmetics rules        
+        Warning: Estimates regardless of arithmetics rules
         '''
         arr = [
             s for s in self.column if s.isdigit() or s in ['/', '*', '+', '-']
@@ -135,7 +135,9 @@ class Metric:
                         return float(
                             self.get_count_percentage(
                                 int(self.function.split('_')[1])))
-                    return float(self.get_count(int(self.function.split('_')[1])))
+                    return float(self.get_count(
+                        int(self.function.split('_')[1]))
+                    )
                 return float(getattr(self, 'get_' + self.function)())
             return float(self.get_last_value())
         return 0
@@ -180,9 +182,9 @@ def read_logfile_reverse(filename,
                          buf_size=8192):
     """
     A generator that returns the lines of a file in reverse order.
-    Stops to read when has met timestamp bigger then desired period 
-    
-    returns False if file was not read completely
+    Stops to read when has met timestamp bigger then desired period.
+
+    Returns False if file was not read completely.
     """
     with open(filename) as fh:
         global_index = 0
@@ -236,7 +238,7 @@ def convert_to_timestamp(time_str, time_format):
     return int(timestamp)
 
 
-def main():
+def main():     # NOQA: C901
     args = parse_args()
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
