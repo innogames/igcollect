@@ -5,7 +5,11 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
-import MySQLdb
+try:
+    from mysql.connector import connect
+except ImportError:
+    from MySQLdb import connect
+
 from argparse import ArgumentParser
 from time import time
 
@@ -13,6 +17,9 @@ from time import time
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='mysql')
+    parser.add_argument('--host', default='localhost')
+    parser.add_argument('--user')
+    parser.add_argument('--password')
     return parser.parse_args()
 
 
@@ -20,20 +27,20 @@ def main():
     args = parse_args()
     template = args.prefix + '.{}.{} {} ' + str(int(time()))
 
-    db = MySQLdb.connect(
-        user='root',
-        host='localhost',
-        read_default_file='/etc/mysql/my.cnf',
+    db = connect(
+        user=args.user,
+        password=args.password,
+        host=args.host,
     )
     cur = db.cursor()
 
     # Check for global status
-    cur.execute('show global status')
+    cur.execute('SHOW GLOBAL STATUS')
     for row in cur.fetchall():
         if row[1].isdigit():
             print(template.format('status', row[0], row[1]))
 
-    cur.execute('show variables')
+    cur.execute('SHOW VARIABLES')
     for row in cur.fetchall():
         if row[1].isdigit():
             print(template.format('variables', row[0], row[1]))
@@ -52,13 +59,16 @@ def main():
         if row[0] in sysdbs:
             continue
         cur.execute(
-            'SELECT round(DATA_FREE / 1024 / 1024) '
+            'SELECT table_name, '
+            'ROUND(data_free / 1024 / 1024), '
+            'ROUND((data_length + index_length), 2) '
             'FROM information_schema.tables '
-            'WHERE TABLE_SCHEMA = %s AND DATA_FREE > 0',
+            'WHERE table_schema = %s',
             [row[0]]
         )
         for value in cur.fetchall():
-            free += value[0]
+            print(template.format('table_size', value[0], value[2]))
+            free += value[1]
     print(template.format('status', 'optimize_freeable', free))
 
 
