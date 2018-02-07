@@ -166,7 +166,7 @@ def get_metrics_values(line, metrics, time_format, columns_num):
                 metric.values.append(value)
             else:
                 return False
-        return True
+    return True
 
 
 def get_metrics_last_value(line, metrics):
