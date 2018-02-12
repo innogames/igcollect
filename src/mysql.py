@@ -29,7 +29,7 @@ def main():
 
     db = connect(
         user=args.user,
-        password=args.password,
+        passwd=args.password,
         host=args.host,
     )
     cur = db.cursor()
