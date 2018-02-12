@@ -20,6 +20,10 @@ def parse_args():
     parser.add_argument('--host', default='localhost')
     parser.add_argument('--user')
     parser.add_argument('--password')
+    parser.add_argument(
+        '--unix-socket',
+        default='/var/run/mysqld/mysqld.sock',
+    )
     return parser.parse_args()
 
 
@@ -31,6 +35,7 @@ def main():
         user=args.user,
         passwd=args.password,
         host=args.host,
+        unix_socket=args.unix_socket,
     )
     cur = db.cursor()
 
