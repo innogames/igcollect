@@ -27,7 +27,7 @@ import time
 import os
 import gzip
 import logging
-
+import datetime
 from argparse import ArgumentParser, ArgumentTypeError
 
 
@@ -52,7 +52,7 @@ class Metric:
         self.period = period
         self.values = []  # Container for metric values
         self.last_value = 0
-        self.now = int(time.time())
+        self.now = int(datetime.datetime.utcnow().timestamp())
 
     def get_timeshift(self):
         if self.period:
@@ -135,9 +135,8 @@ class Metric:
                         return float(
                             self.get_count_percentage(
                                 int(self.function.split('_')[1])))
-                    return float(self.get_count(
-                        int(self.function.split('_')[1]))
-                    )
+                    return float(
+                        self.get_count(int(self.function.split('_')[1])))
                 return float(getattr(self, 'get_' + self.function)())
             return float(self.get_last_value())
         return 0
@@ -149,10 +148,9 @@ def parse_args():
     parser.add_argument('--file', default='/var/log/messages')
     parser.add_argument('--columns-num', default='5', type=int)
     parser.add_argument('--metric', type=Metric, nargs='+')
-    parser.add_argument('--time-format', default='%Y-%m-%dT%H:%M:%S')
+    parser.add_argument('--time-format', default='%Y-%m-%dT%H:%M:%S%z')
     parser.add_argument('--arch', action='store_true')
     parser.add_argument('--debug', '-d', action='store_true')
-    parser.add_argument('--time-zone', default='UTC')
     return parser.parse_args()
 
 
@@ -225,28 +223,20 @@ def read_logfile_reverse(filename,
 
 def convert_to_timestamp(time_str, time_format):
     try:
-        timestamp = int(
-            time.mktime(time.strptime(time_str.split('+', 1)[0], time_format)))
+        # Take iso8601 time string and convert it to UTC timezone
+        dt = datetime.datetime.strptime(''.join(time_str.rsplit(':', 1)),
+                                        time_format).utctimetuple()
+        timestamp = time.mktime(dt)
     except ValueError:
-        try:
-            timestamp = int(time_str)
-        except ValueError:
-            timestamp = int(
-                time.mktime(
-                    time.strptime('-'.join(time_str.split('-')[:-1]),
-                                  time_format)))
+        timestamp = int(time_str)
     return int(timestamp)
 
 
-def main():     # NOQA: C901
+def main():  # NOQA: C901
     args = parse_args()
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger().addHandler(logging.StreamHandler())
-
-    if args.time_zone:
-        os.environ['TZ'] = args.time_zone
-        time.tzset()
 
     file_was_readed = True
 
