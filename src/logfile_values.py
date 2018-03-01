@@ -233,9 +233,17 @@ def read_logfile_reverse(filename,
 
 def convert_to_timestamp(time_str, time_format):
     try:
-        # Take iso8601 time string and convert it to UTC timezone
-        dt = datetime.datetime.strptime(''.join(time_str.rsplit(':', 1)),
-                                        time_format).utctimetuple()
+        # Python cannot parse ISO8601 dates with suffix Z for UTC which is a
+        # valid representation so we need to help it in advance.
+        if time_format.endswith('z') and time_str.endswith('Z'):
+            time_str = time_str[:-1] + '+0000'
+
+        # We have seen some wrong formats returning ISO8601 dates with suffix Z
+        # with a colon separated e.g. +01:00 this needs to be fixed.
+        if time_format.endswith('z') and time_str[-3] == ':':
+            time_str = ''.join(time_str.rsplit(':', 1))
+
+        dt = datetime.datetime.strptime(time_str, time_format).utctimetuple()
         timestamp = time.mktime(dt)
     except ValueError:
         timestamp = int(time_str)
