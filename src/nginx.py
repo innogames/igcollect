@@ -5,9 +5,15 @@
 # Copyright (c) 2016, InnoGames GmbH
 #
 
+import sys
+
 from argparse import ArgumentParser
-from urllib2 import Request, urlopen
 from time import time
+
+if sys.version_info.major == 3:
+    from urllib.request import Request, urlopen
+else:
+    from urllib2 import Request, urlopen
 
 
 def parse_args():
@@ -27,7 +33,7 @@ def main():
     response = urlopen(Request(args.url, headers=headers))
     s = response.read().splitlines()
     # Current active connections
-    stub_status['active_connections'] = s[0].split(':')[1].strip()
+    stub_status['active_connections'] = s[0].split(b':')[1].strip()
     # All accepted connections since server restart
     stub_status['accepted_connections'] = s[2].split()[0].strip()
     # All connections that were processed
@@ -44,7 +50,7 @@ def main():
 
     template = args.prefix + '.stub_status.{0} {1} ' + str(int(time()))
     for key, value in stub_status.items():
-        print(template.format(key, value))
+        print(template.format(key, value.decode('utf-8')))
 
 
 if __name__ == '__main__':
