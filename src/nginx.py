@@ -2,17 +2,15 @@
 #
 # igcollect - Nginx
 #
-# Copyright (c) 2016, InnoGames GmbH
+# Copyright (c) 2018, InnoGames GmbH
 #
-
-import sys
 
 from argparse import ArgumentParser
 from time import time
 
-if sys.version_info.major == 3:
+try:
     from urllib.request import Request, urlopen
-else:
+except ImportError:
     from urllib2 import Request, urlopen
 
 
