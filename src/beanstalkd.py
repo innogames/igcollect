@@ -67,11 +67,11 @@ def main():
         'binlog-records-migrated',
         'binlog-records-written',
     )
-    stats = [l.split(': ') for l in read_stats().splitlines()[2:-1]]
+    stats = [l.split(b': ') for l in read_stats().splitlines()[2:-1]]
 
     for key, value in stats:
-        if key in metrics:
-            print(template.format(key, value))
+        if key.decode('utf-8') in metrics:
+            print(template.format(key.decode('utf-8'), value.decode('utf-8')))
 
 
 def read_stats():
@@ -94,7 +94,7 @@ def read_stats():
     try:
         conn.settimeout(2)
         conn.connect(('localhost', 11300))
-        conn.send('stats\r\n')
+        conn.send(b'stats\r\n')
         return conn.recv(4096)
     finally:
         conn.close()

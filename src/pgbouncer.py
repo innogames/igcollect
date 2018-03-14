@@ -30,7 +30,7 @@ def main():
     cur.execute('SHOW POOLS')
     for row in cur.fetchall():
         if (args.dbs and row[0] in args.dbs) or (args.dbs is None):
-            for col, value in zip(stats_pools, row)[2:]:
+            for col, value in list(zip(stats_pools, row))[2:]:
                 print('{0}.{1}.{2}.{3} {4} {5}'.format(
                     args.prefix,
                     'pool',
@@ -48,7 +48,7 @@ def main():
     cur.execute('SHOW STATS')
     for row in cur.fetchall():
         if (args.dbs and row[0] in args.dbs) or (args.dbs is None):
-            for col, value in zip(stats_data, row)[1:]:
+            for col, value in list(zip(stats_data, row))[1:]:
                 print('{0}.{1}.{2}.{3} {4} {5}'.format(
                     args.prefix,
                     'stat',
