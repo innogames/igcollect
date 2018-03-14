@@ -22,9 +22,9 @@ def main():
 
     redis_stats = {}
     for x in redis_info.splitlines():
-        if x.find(':') != -1:
-            key, value = x.split(':')
-            redis_stats[key] = value
+        if x.find(b':') != -1:
+            key, value = x.split(b':')
+            redis_stats[key.decode('utf-8')] = value.decode('utf-8')
 
     template = args.prefix + '.{} {} ' + str(int(time()))
     headers = (
