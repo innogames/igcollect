@@ -1,14 +1,49 @@
 #!/usr/bin/env python
 #
-# Collect metrics about pgbouncer
+# igcollect - PgBouncer
 #
-# Copyright (c) 2017 - InnoGames GmbH
+# Copyright (c) 2018 - InnoGames GmbH
 #
 
 import psycopg2
 
 from time import time
 from argparse import ArgumentParser
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument(
+        '--host',
+        help='PostgreSQL pgbouncer host (default: localhost)',
+        default='localhost',
+    )
+    parser.add_argument(
+        '--user',
+        help='PostgreSQL db user to login (default: stats)',
+        default='stats',
+    )
+    parser.add_argument(
+        '--password',
+        help='PostgreSQL db user password to login',
+    )
+    parser.add_argument(
+        '--port',
+        help='PostgreSQL pgbouncer pool port (default: 6432)',
+        default=6432,
+    )
+    parser.add_argument(
+        '--dbs',
+        help='PostgreSQL pgbouncer db to gather pool metrics from',
+        nargs='+',
+    )
+    parser.add_argument(
+        '--prefix',
+        help='Graphite metric path prefix for stats (default: pgbouncer)',
+        default='pgbouncer',
+    )
+
+    return parser.parse_args()
 
 
 def main():
@@ -60,40 +95,6 @@ def main():
 
     cur.close()
     conn.close()
-
-
-def parse_args():
-    parser = ArgumentParser()
-    parser.add_argument(
-        '--host',
-        help='PostgreSQL pgbouncer host (default: localhost)',
-        default='localhost',
-    )
-    parser.add_argument(
-        '--user',
-        help='PostgreSQL db user to login'
-    )
-    parser.add_argument(
-        '--password',
-        help='PostgreSQL db user password to login'
-    )
-    parser.add_argument(
-        '--port',
-        help='PostgreSQL pgbouncer pool port (default: 6432)',
-        default=6432
-    )
-    parser.add_argument(
-        '--dbs',
-        help='PostgreSQL pgbouncer db to gather pool metrics from',
-        nargs='+',
-    )
-    parser.add_argument(
-        '--prefix',
-        help='Graphite metric path prefix for stats (default: pgbouncer)',
-        default='pgbouncer',
-    )
-
-    return parser.parse_args()
 
 
 if __name__ == '__main__':
