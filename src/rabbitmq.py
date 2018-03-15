@@ -7,9 +7,15 @@
 
 from argparse import ArgumentParser
 from time import time
+import sys
 import json
-import urllib2
 import base64
+
+try:
+    from urllib.request import Request, urlopen
+    from urllib.error import HTTPError
+except ImportError:
+    from urllib2 import Request, urlopen, HTTPError
 
 
 def parse_args():
@@ -93,11 +99,19 @@ def main():
 
 
 def download(url):
-    base64string = base64.encodestring('%s:%s' % ('guest', 'guest'))[:-1]
-    req = urllib2.Request(url)
-    req.add_header("Authorization", "Basic %s" % base64string)
-    r = urllib2.urlopen(req)
-    return json.load(r)
+    if sys.version_info.major == 3:
+        base64string = base64.b64encode(b'guest:guest')
+        headers = {
+            'Authorization': 'Basic {0}'.format(base64string.decode('utf-8'))}
+        req = Request(url, headers=headers)
+        r = urlopen(req)
+        return json.loads(r.readall().decode('utf-8'))
+    else:
+        base64string = base64.encodestring('%s:%s' % ('guest', 'guest'))[:-1]
+        req = Request(url)
+        req.add_header("Authorization", "Basic %s" % base64string)
+        r = urlopen(req)
+        return json.load(r)
 
 
 if __name__ == '__main__':
