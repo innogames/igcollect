@@ -5,11 +5,12 @@
 # Copyright (c) 2018, InnoGames GmbH
 #
 
-from argparse import ArgumentParser
-from time import time
 import sys
 import json
 import base64
+
+from time import time
+from argparse import ArgumentParser
 
 try:
     from urllib.request import Request, urlopen
