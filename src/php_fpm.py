@@ -37,7 +37,7 @@ def main():
     template = args.prefix + '.{} {} ' + str(int(time()))
     pool_found = False
     for line in response.readlines():
-        key, value = line.split(':', 1)
+        key, value = line.decode('utf-8').split(':', 1)
         key = key.replace(' ', '_')
         value = value.strip()
 
