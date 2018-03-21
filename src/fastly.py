@@ -13,7 +13,7 @@ from time import time
 from argparse import ArgumentParser
 
 try:
-    from urllib import Request, urlopen
+    from urllib.request import Request, urlopen
     from urllib.parse import urlencode
 except ImportError:
     from urllib2 import Request, urlopen
