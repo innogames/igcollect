@@ -2,7 +2,7 @@
 #
 # igcollect - RabbitMQ stats
 #
-# Copyright (c) 2016, InnoGames GmbH
+# Copyright (c) 2018, InnoGames GmbH
 #
 
 from argparse import ArgumentParser
@@ -41,9 +41,9 @@ def main():
     ]
 
     overview_queue_totals_metrics = [
-    'messages',
-    'messages_ready',
-    'messages_unacknowledged',
+        'messages',
+        'messages_ready',
+        'messages_unacknowledged',
     ]
 
     overview_message_stats_metrics = ['publish']
@@ -87,7 +87,7 @@ def main():
     # Shovels data
     try:
         data = download(rabbit_url + '/shovels')
-    except urllib2.HTTPError:
+    except HTTPError:
         pass
     else:
         print(template.format('object_totals.shovels', str(len(data))))

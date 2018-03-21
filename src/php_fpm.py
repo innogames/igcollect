@@ -6,12 +6,16 @@
 # HTTP request to get the page, and formats the output.  All the numeric
 # values of the requested pool is printed.
 #
-# Copyright (c) 2016, InnoGames GmbH
+# Copyright (c) 2018, InnoGames GmbH
 #
 
-from argparse import ArgumentParser
-from urllib2 import Request, urlopen
 from time import time
+from argparse import ArgumentParser
+
+try:
+    from urllib import Request, urlopen
+except ImportError:
+    from urllib2 import Request, urlopen
 
 
 def parse_args():
