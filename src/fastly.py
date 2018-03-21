@@ -2,17 +2,23 @@
 #
 # igcollect - Fastly CDN
 #
-# Copyright (c) 2016, InnoGames GmbH
+# Copyright (c) 2018, InnoGames GmbH
 #
 
-from argparse import ArgumentParser
-import json
 import sys
-from time import time
-import urllib
-import urllib2
-
+import json
 import grequests
+
+from time import time
+from argparse import ArgumentParser
+
+try:
+    from urllib import Request, urlopen
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib2 import Request, urlopen
+    from urllib import urlencode
+
 
 FASTLY_BASE_URL = 'https://api.fastly.com'
 AVG_KEYS = ('hit_ratio', 'hits_time', 'miss_time')
@@ -151,7 +157,7 @@ def get_service_data_request(api_key, service=None, query=None):
 
 
 def get_service_data(api_key, service=None, query=None):
-    query = urllib.urlencode(query)
+    query = urlencode(query)
 
     if not service:
         url = '/stats?' + query
@@ -183,8 +189,8 @@ def get_regions(api_key):
 
 def get_data(fastly_url, api_key):
     url = FASTLY_BASE_URL + fastly_url
-    req = urllib2.Request(url=url, headers={'Fastly-Key': api_key})
-    fd = urllib2.urlopen(req, timeout=10)
+    req = Request(url=url, headers={'Fastly-Key': api_key})
+    fd = urlopen(req, timeout=10)
     return json.loads(fd.read())
 
 

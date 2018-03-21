@@ -2,17 +2,23 @@
 #
 # igcollect - Highwinds CDN
 #
-# Copyright (c) 2016, InnoGames GmbH
+# Copyright (c) 2018, InnoGames GmbH
 #
 
-from argparse import ArgumentParser
-import json
 import sys
-from time import gmtime, strftime, time
-import urllib
-import urllib2
-
+import json
 import grequests
+
+from time import gmtime, strftime, time
+from argparse import ArgumentParser
+
+try:
+    from urllib import Request, urlopen
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
+    from urllib2 import Request, urlopen
+
 
 HIGHWINDS_BASE_URL = 'https://striketracker.highwinds.com/api/v1'
 AVG_KEYS = ('xferRateMeanMbps', 'xferRateMbps', 'userXferRateMbps', 'rps',
@@ -168,7 +174,7 @@ def get_host_data_request(account_hash, api_key, query={}):
 
 
 def get_host_data(account_hash, api_key, query={}):
-    query = urllib.urlencode(query)
+    query = urlencode(query)
     url = '/accounts/{account_hash}/analytics/transfer?{query}'.format(
         account_hash=account_hash, query=query)
     hosts_data = get_data(url, api_key)['series']
@@ -182,11 +188,11 @@ def get_data_request(highwinds_url, api_key, params={}):
 
 
 def get_data(highwinds_url, api_key):
-    req = urllib2.Request(
+    req = Request(
         url=HIGHWINDS_BASE_URL + highwinds_url,
         headers={"Authorization": 'Bearer {}'.format(api_key)},
     )
-    f = urllib2.urlopen(req)
+    f = urlopen(req)
     return json.loads(f.read())
 
 
