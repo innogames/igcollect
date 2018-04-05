@@ -270,9 +270,9 @@ def main():  # NOQA: C901
     # If the main file was read completely and there is arch flag then
     # check archive files for the presence of a timestamp satisfying condition
     if args.arch and file_was_readed:
-        dir_path = os.path.dirname(os.path.realpath(args.file))
-        archive_pattern = re.compile(r'{}\.\d+?\.gz'.format(args.file))
-        for root, dirs, files in os.walk(dir_path):
+        archive_pattern = re.compile(r'{}\.1\.gz'.format(
+            os.path.basename(args.file)))  # parse only first (newest) archive
+        for root, dirs, files in os.walk(os.path.dirname(args.file)):
             for f in files:
                 if archive_pattern.search(f):
                     archive_file = os.path.join(root, f)
