@@ -159,7 +159,7 @@ def parse_args():
 
 
 def get_metrics_values(line, metrics, time_format, columns_num):
-    fields = line.split(' ')
+    fields = line.split()
     if len(fields) == columns_num:
         timestamp = convert_to_timestamp(fields[0], time_format)
         for metric in metrics:
