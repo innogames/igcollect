@@ -13,8 +13,7 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from time import time
 
-from mysql.connector import connect
-
+from MySQLdb import connect
 
 def parse_args():
     parser = ArgumentParser()
@@ -41,7 +40,7 @@ def main():
 
     cnx = connect(
         user=args.user,
-        password=args.password,
+        passwd=args.password,
         host=args.host,
         db=args.dbname,
     )
@@ -50,7 +49,7 @@ def main():
         cur.execute(query)
         if not cur.rowcount:
             raise Exception('No result')
-        rows = [dict(zip(cur.column_names, r)) for r in cur.fetchall()]
+        rows = [dict(zip([d[0] for d in cur.description], r)) for r in cur.fetchall()]
         if args.key_column:
             items.extend(get_row_data(rows, args.key_column))
         else:
