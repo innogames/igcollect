@@ -23,7 +23,8 @@ def main():
         'Intel(R) Xeon(R) CPU E5-2660 0 @ 2.20GHz': 1.6,
         'Intel(R) Xeon(R) CPU E5-2660 v2 @ 2.20GHz': 1.65,
         'Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz': 1.85,
-        'Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz': 1.75
+        'Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz': 1.75,
+        'Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz': 1.8
     }
     cpufactor = 1.0
 
