@@ -6,9 +6,10 @@ Copyright (c) 2018 InnoGames GmbH
 
 from inspect import currentframe, getfile
 from os.path import dirname, join
-from src.linux_network import InterfaceStatistics
 from tarfile import open as taropen
 import unittest
+
+from igcollect.linux_network import InterfaceStatistics
 
 
 _stat = {
