@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Linux virtual memory stats
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - Linux Virtual Memory Stats
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Fastly CDN
-#
-# Copyright (c) 2018, InnoGames GmbH
-#
+"""igcollect - Fastly CDN
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 import sys
 import json

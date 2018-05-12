@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Linux disk usage
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - Linux Disk Usage
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - process stat
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - OS Processes
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from collections import namedtuple

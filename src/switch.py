@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-#
-# igcollect - Switch stats:
-#             - port traffic
-#             - port errors
-#             - cpu usage
-#
-# Copyright (c) 2017, InnoGames GmbH
-#
+"""igcollect - Switch
+
+This script collects
+
+* port traffic
+* port errors
+* CPU utilization
+
+from a switch via SNMP.
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

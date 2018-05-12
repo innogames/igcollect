@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - PgBouncer
-#
-# Copyright (c) 2018 - InnoGames GmbH
-#
+"""igcollect - PgBouncer
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 import psycopg2
 

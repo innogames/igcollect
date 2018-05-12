@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - smart
-#
-# Copyright (c) 2017, InnoGames GmbH
-#
+"""igcollect - S.M.A.R.T.
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from glob import glob

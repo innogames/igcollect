@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - GO pprof
-#
-# Copyright (c) 2017, InnoGames GmbH
-#
+"""igcollect - GO pprof
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from os.path import dirname, abspath

@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Linux load average
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - Linux Load Average
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

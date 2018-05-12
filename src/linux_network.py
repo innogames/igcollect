@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Linux network
-#
-# Copyright (c) 2018, InnoGames GmbH
-#
+"""igcollect - Linux Network
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

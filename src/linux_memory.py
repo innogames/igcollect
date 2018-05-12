@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Linux memory usage
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - Linux Memory Usage
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

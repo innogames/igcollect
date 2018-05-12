@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - haproxy
-#
-# Copyright (c) 2017 InnoGames GmbH
-#
+"""igcollect - haproxy
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 from socket import socket, AF_UNIX, SOCK_STREAM, MSG_DONTWAIT
 from argparse import ArgumentParser

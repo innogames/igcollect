@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - FreeBSD memory usage
-#
-# Copyright (c) 2016 InnoGames GmbH
-#
+"""igcollect - FreeBSD Memory Usage
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from __future__ import print_function
 from argparse import ArgumentParser

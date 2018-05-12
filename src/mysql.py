@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Mysql Status
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - MySQL Status
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 try:
     from mysql.connector import connect

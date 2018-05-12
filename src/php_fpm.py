@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-#
-# igcollect - PHP FPM
-#
-# This is the data collector for the PHP FPM status page.  It makes a
-# HTTP request to get the page, and formats the output.  All the numeric
-# values of the requested pool is printed.
-#
-# Copyright (c) 2018, InnoGames GmbH
-#
+"""igcollect - PHP FPM
+
+This is the data collector for the PHP FPM status page.  It makes a
+HTTP request to get the page, and formats the output.  All the numeric
+values of the requested pool is printed.
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 from time import time
 from argparse import ArgumentParser

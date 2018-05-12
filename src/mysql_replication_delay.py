@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - MySQL replication delay
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - MySQL Replication Delay
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from subprocess import check_output

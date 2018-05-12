@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Redis
-#
-# Copyright (c) 2016 InnoGames GmbH
-#
+"""igcollect - Redis
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from subprocess import check_output

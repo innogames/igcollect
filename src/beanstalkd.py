@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Beanstalkd
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - Beanstalkd
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from socket import socket, AF_INET, SOCK_STREAM

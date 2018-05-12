@@ -1,4 +1,8 @@
-# vim:tabstop=8:noexpandtab:
+#
+# igcollect - Makefile
+#
+# Copyright (c) 2018 InnoGames GmbH
+#
 
 .PHONY:
 

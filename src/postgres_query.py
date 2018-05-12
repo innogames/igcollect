@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-#
-# igcollect - PostgreSQL query results
-#
-# This script executes a single query and prints the results.  The columns
-# returned by the query are going to be appended to the given prefix.
-# The query must return numeric values.
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - PostgreSQL Query Results
+
+This script executes a single query and prints the results.  The columns
+returned by the query are going to be appended to the given prefix.
+The query must return numeric values.
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from __future__ import print_function
 

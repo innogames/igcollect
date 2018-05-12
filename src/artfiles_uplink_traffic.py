@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Artfiles uplink traffic
-#
-# Copyright (c) 2017, InnoGames GmbH
-#
+"""igcollect - Artfiles Uplink Traffic
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 import logging
 from argparse import ArgumentParser

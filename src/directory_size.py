@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Directory size stat
-#
-# Copyright (c) 2017, InnoGames GmbH
-#
+"""igcollect - Directory Size
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 import os
 from argparse import ArgumentParser

@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - FreeBSD network interface stats
-#
-# Copyright (c) 2016 InnoGames GmbH
-#
+"""igcollect - FreeBSD Network Interface
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from __future__ import print_function
 from argparse import ArgumentParser

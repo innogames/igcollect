@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect library - PostgreSQL routines
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect Library - PostgreSQL Routines
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from __future__ import print_function
 from psycopg2 import connect

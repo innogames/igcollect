@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Redis keys
-#
-# Copyright (c) 2017 InnoGames GmbH
-#
+"""igcollect - Redis Keys
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 import redis
 from argparse import ArgumentParser

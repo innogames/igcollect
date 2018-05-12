@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - KVM stats
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - KVM
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from collections import defaultdict

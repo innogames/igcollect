@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-#
-# igcollect - Mysql query results
-#
-# This script executes a single query and prints the results.  The columns
-# returned by the query are going to be appended to the given prefix.
-# The query must return numeric values.
-#
-# Copyright (c) 2017, InnoGames GmbH
-#
+"""igcollect - MySQL Query Results
+
+This script executes a single query and prints the results.  The columns
+returned by the query are going to be appended to the given prefix.
+The query must return numeric values.
+
+Copyright (c) 2017 InnoGames GmbH
+"""
+
 from __future__ import print_function
 
 from argparse import ArgumentParser

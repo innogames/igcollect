@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# unit tests for igcollect/linux_network
-#
-# Copyright (c) 2018, InnoGames GmbH
-#
+"""igcollect - Tests - Linux Network
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 from inspect import currentframe, getfile
 from os.path import dirname, join

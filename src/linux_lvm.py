@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Linux volume manager
-#
-# Copyright (c) 2017, InnoGames GmbH
-#
+"""igcollect - Linux Volume Manager
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from subprocess import check_output

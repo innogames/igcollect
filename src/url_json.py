@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+"""igcollect - JSON via HTTP
+
+Copyright (c) 2018 InnoGames GmbH
+"""
+
 from argparse import ArgumentParser
 from time import time
 from urllib.request import urlopen

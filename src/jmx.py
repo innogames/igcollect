@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - JVM stat
-#
-# Copyright (c) 2018, InnoGames GmbH
-#
+"""igcollect - JVM
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from os.path import dirname, abspath

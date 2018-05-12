@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Sent currently deployed game version.
-#
-# Copyright (c) 2016 InnoGames GmbH
-#
+"""igcollect - Currently Deployed Game Version
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from os.path import exists

@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Linux CPU performance factors
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - Linux CPU Performance Factors
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

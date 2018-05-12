@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - PostgreSQL globals
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - PostgreSQL Globals
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Highwinds CDN
-#
-# Copyright (c) 2018, InnoGames GmbH
-#
+"""igcollect - Highwinds CDN
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 import sys
 import json

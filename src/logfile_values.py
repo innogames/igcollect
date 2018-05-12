@@ -1,14 +1,7 @@
 #!/usr/bin/env python
-#
-# logfile_values.py
-#
-# Copyright (c) 2018, InnoGames GmbH
-#
+"""igcollect - Values from Log File
 
-"""
-logfile_values.py -- a python script to find metrics values in log file
-
-This script can retrive last line values by column number:
+This script can retrieve last line values by column number:
 
 python logfile_values.py --metric "metric1:1" "metric2:2" ...
 
@@ -22,6 +15,7 @@ count_100_percentage - estimates percentage of values > 100
 python logfile_values.py --metric "metric1:1:mean:1d" \
                          --metric "metric2:3:count:60s"
 
+Copyright (c) 2018 InnoGames GmbH
 """
 
 import re

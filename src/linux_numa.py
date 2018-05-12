@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Linux NUMA metrics
-#
-# Copyright (c) 2017, InnoGames GmbH
-#
+"""igcollect - Linux NUMA Metrics
+
+Copyright (c) 2017 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

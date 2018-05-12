@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Artfiles hosting
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - Artfiles Hosting Metrics
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

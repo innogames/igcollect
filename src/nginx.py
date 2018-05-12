@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - Nginx
-#
-# Copyright (c) 2018, InnoGames GmbH
-#
+"""igcollect - Nginx
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from time import time

@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - RabbitMQ stats
-#
-# Copyright (c) 2018, InnoGames GmbH
-#
+"""igcollect - RabbitMQ
+
+Copyright (c) 2018 InnoGames GmbH
+"""
 
 import sys
 import json

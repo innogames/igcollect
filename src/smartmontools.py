@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-#
-# igcollect - smartmontools
-#
-# Copyright (c) 2016, InnoGames GmbH
-#
+"""igcollect - smartmontools
+
+Copyright (c) 2016 InnoGames GmbH
+"""
 
 from argparse import ArgumentParser
 from glob import glob

@@ -1,12 +1,5 @@
 #!/usr/bin/env python
-#
-# logs.py
-#
-# Copyright (c) 2017, InnoGames GmbH
-#
-
-"""
-logs.py -- a python script to find messages within timeshift
+"""igcollect - Logs
 
 This script is capable of scanning log files for a given regex for a message
 and then compare them by a given time format if they are within a given
@@ -17,6 +10,8 @@ see how many errors occur and how many duplicates you have.
 
 python logs.py myfile.log 15m "([0-9]{2}-?){3} ([0-9]{2}:?){3}" \
     "%y-%m-%d %H:%M:%S" "(\[ERROR\].*)" --verbose
+
+Copyright (c) 2017 InnoGames GmbH
 """
 
 import re
