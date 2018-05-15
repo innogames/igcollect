@@ -57,16 +57,21 @@ class InterfaceStatistics(object):
 
     def get_interfaces(self):
         for dev in listdir(self._scn):
-            if self.included_types:
-                for i_type in self.included_types:
-                    checks = self.NET_TYPES[i_type]
-                    results = []
-                    for check, arg in zip(checks[::2], checks[1::2]):
-                        results.append(check(self, dev, arg))
-                    if False not in results:
-                        self.netdev_stat[dev] = {}
-            else:
+            dev_path = join(self._scn, dev)
+            if not (islink(dev_path) or isdir(dev_path)):
+                # Skip regular files
+                continue
+            if not self.included_types:
+                # Send metrics for all devices
                 self.netdev_stat[dev] = {}
+                continue
+            for i_type in self.included_types:
+                checks = self.NET_TYPES[i_type]
+                results = []
+                for check, arg in zip(checks[::2], checks[1::2]):
+                    results.append(check(self, dev, arg))
+                if False not in results:
+                    self.netdev_stat[dev] = {}
 
     def fill_metrics(self):
         self.timestamp = int(time())
