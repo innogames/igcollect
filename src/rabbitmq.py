@@ -34,24 +34,66 @@ def main():
                      'proc_used', 'proc_total', 'run_queue', 'processors']
 
     overview_object_totals_metrics = [
-        'consumers',
-        'queues',
-        'exchanges',
-        'connections',
         'channels',
+        'connections',
+        'consumers',
+        'exchanges',
+        'queues',
     ]
 
     overview_queue_totals_metrics = [
         'messages',
+        'messages_details.rate',
         'messages_ready',
+        'messages_ready_details.rate',
         'messages_unacknowledged',
+        'messages_unacknowledged_details.rate',
     ]
 
-    overview_message_stats_metrics = ['publish']
+    overview_message_stats_metrics = [
+        'ack',
+        'ack_details.rate',
+        'confirm',
+        'confirm_details.rate',
+        'deliver',
+        'deliver_details.rate',
+        'deliver_get',
+        'deliver_get_details.rate',
+        'deliver_no_ack',
+        'deliver_no_ack_details.rate',
+        'disk_reads',
+        'disk_reads_details.rate',
+        'disk_writes',
+        'disk_writes_details.rate',
+        'get',
+        'get_details.rate',
+        'get_no_ack',
+        'get_no_ack_details.rate',
+        'publish',
+        'publish_details.rate',
+        'redeliver',
+        'redeliver_details.rate',
+        'return_unroutable',
+        'return_unroutable_details.rate',
+    ]
+
+    exchanges_message_stats_metrics = [
+        'publish_in',
+        'publish_in_details.rate',
+        'publish_out',
+        'publish_out_details.rate',
+    ]
 
     # Overview data
     data = download(rabbit_url + '/overview')
     nodename = data['node']
+
+    try:
+        print(template.format(
+            'statistics_db_event_queue', data['statistics_db_event_queue']
+        ))
+    except KeyError:
+        pass
 
     for metric in overview_object_totals_metrics:
         try:
@@ -62,17 +104,29 @@ def main():
             pass
     for metric in overview_message_stats_metrics:
         try:
-            print(template.format(
-                'message_stats.' + metric, data['message_stats'][metric]
-            ))
+            if '.' in metric:
+                print(template.format(
+                    'message_stats.' + metric, get_metric_value(
+                        metric.split('.'), data['message_stats'])
+                ))
+            else:
+                print(template.format(
+                    'message_stats.' + metric, data['message_stats'][metric]
+                ))
         except KeyError:
             pass
 
     for metric in overview_queue_totals_metrics:
         try:
-            print(template.format(
-                'queue_totals.' + metric, data['queue_totals'][metric]
-            ))
+            if '.' in metric:
+                print(template.format(
+                    'queue_totals.' + metric, get_metric_value(
+                        metric.split('.'), data['queue_totals'])
+                ))
+            else:
+                print(template.format(
+                    'queue_totals.' + metric, data['queue_totals'][metric]
+                ))
         except KeyError:
                 pass
 
@@ -97,6 +151,44 @@ def main():
             if shovel['state'] == 'running':
                 state = 1
             print(template.format('shovels.' + shovel['name'], state))
+
+    # exchanges data
+    try:
+        data = download(rabbit_url + '/exchanges')
+    except HTTPError:
+        pass
+    else:
+        for exchange in data:
+            for metric in exchanges_message_stats_metrics:
+                if 'message_stats' in exchange:
+                    if '.' in metric:
+                        print(template.format(
+                            'exchanges.{}.message_stats.{}'.format(
+                                exchange['name'] if exchange['name'] else '0',
+                                metric
+                            ),
+                            get_metric_value(
+                                metric.split('.'),
+                                exchange['message_stats']
+                            )
+                        ))
+                    else:
+                        print(template.format(
+                            'exchanges.{}.message_stats.{}'.format(
+                                exchange['name'] if exchange['name'] else '0',
+                                metric
+                            ),
+                            exchange['message_stats'][metric]
+                        ))
+
+
+def get_metric_value(metric, data):
+    """Get Metric value recursively for metric key from data"""
+
+    if len(metric) > 1:
+        return get_metric_value(metric[1:], data[metric[0]])
+
+    return data[metric[0]]
 
 
 def download(url):
