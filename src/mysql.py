@@ -53,8 +53,8 @@ def main():
     # Find out how much space we can recover by Optimize
     sysdbs = {
         'information_schema',
-        'performance_schema',
         'mysql',
+        'performance_schema',
         'sys',
         'test',
     }
@@ -68,7 +68,8 @@ def main():
             'ROUND(data_free / 1024 / 1024), '
             'ROUND((data_length + index_length), 2) '
             'FROM information_schema.tables '
-            'WHERE table_schema = %s',
+            'WHERE table_type = "BASE TABLE" '
+            'AND table_schema = %s',
             [row[0]]
         )
         for value in cur.fetchall():
