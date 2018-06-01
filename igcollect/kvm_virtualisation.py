@@ -34,6 +34,10 @@ def main():
         if args.trim_domain:
             if name.endswith('.' + args.trim_domain):
                 name = name[:-len('.' + args.trim_domain)]
+        # Strip objectid from domain name to get the hostname
+        if '_' in name:
+            name = name.split('_', 1)[1]
+        # Make hostname save for graphite
         name = name.replace('.', '_')
         total_cpu = 0
         vcpu_nodes = defaultdict(int)
