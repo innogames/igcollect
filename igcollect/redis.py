@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """igcollect - Redis
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright (c) 2018 InnoGames GmbH
 """
 
 from argparse import ArgumentParser
@@ -17,7 +17,10 @@ def parse_args():
 
 def main():
     args = parse_args()
-    redis_info = check_output(['redis-cli', '-a', redis_pwd(), 'info'])
+    cfg = get_redis_conf('requirepass', 'port')
+    redis_info = check_output([
+        'redis-cli', '-a', cfg['requirepass'], '-p', cfg['port'], 'info',
+    ])
 
     redis_stats = {}
     for x in redis_info.splitlines():
@@ -41,16 +44,23 @@ def main():
         print(template.format(metric, redis_stats[metric]))
 
 
-def redis_pwd():
-    """Get the Redis password from the configuration"""
+def get_redis_conf(*args):
+    """Get requested parameters from the configuration"""
     with open("/etc/redis/redis.conf") as fd:
-        secret_cfg = fd.read().splitlines()
+        content = fd.read().splitlines()
 
-    for line in secret_cfg:
-        line = line.strip()
-        if line.startswith("requirepass"):
-            return line.split(" ")[1].strip()
-    return ''
+    cfg = {}
+    for line in content:
+        parts = line.split()
+        if not parts:
+            continue
+
+        if parts[0] not in args:
+            continue
+
+        cfg[parts[0]] = parts[1]
+
+    return cfg
 
 
 if __name__ == '__main__':
