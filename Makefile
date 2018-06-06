@@ -14,10 +14,8 @@ all:
 
 install: test
 	mkdir -p ${targetdir}/${libexecdir}/igcollect
-	mkdir -p ${targetdir}/${libexecdir}/igcollect/libigcollect
 	mkdir -p ${targetdir}/share/java
 	install igcollect/*.py		${targetdir}/${libexecdir}/igcollect
-	install igcollect/libigcollect/*.py	${targetdir}/${libexecdir}/igcollect/libigcollect
 	install share/java/*.jar	${targetdir}/share/java
 
 test:
