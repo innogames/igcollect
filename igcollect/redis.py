@@ -18,9 +18,14 @@ def parse_args():
 def main():
     args = parse_args()
     cfg = get_redis_conf('requirepass', 'port')
-    redis_info = check_output([
-        'redis-cli', '-a', cfg['requirepass'], '-p', cfg['port'], 'info',
-    ])
+
+    cli_command = ['redis-cli']
+    if 'requirepass' in cfg:
+        cli_command.extend(['-a', cfg['requirepass']])
+    if 'port' in cfg:
+        cli_command.extend(['-p', cfg['port']])
+    cli_command.append('info')
+    redis_info = check_output(cli_command)
 
     redis_stats = {}
     for x in redis_info.splitlines():
