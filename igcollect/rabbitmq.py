@@ -197,7 +197,7 @@ def download(url):
             'Authorization': 'Basic {0}'.format(base64string.decode('utf-8'))}
         req = Request(url, headers=headers)
         r = urlopen(req)
-        return json.loads(r.readall().decode('utf-8'))
+        return json.loads(r.read().decode('utf-8'))
     else:
         base64string = base64.encodestring('%s:%s' % ('guest', 'guest'))[:-1]
         req = Request(url)
