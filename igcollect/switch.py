@@ -87,6 +87,11 @@ def main():
     if not model:
         return -1
 
+    # Remove monitoring of ifInDiscards for force10_mxl switches
+    # The port to second extreme is blocked by STP on each secondary blade switch
+    if model == 'force10_mxl':
+        COUNTERS.pop('ifInDiscards')
+
     cpu_stats(args.prefix, snmp, model)
     monitored_ports = get_monitored_ports(snmp, model)
     ports_stats(args.prefix, snmp, monitored_ports)
