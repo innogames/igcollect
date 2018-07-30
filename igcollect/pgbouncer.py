@@ -59,7 +59,8 @@ def main():
     # General statistics per pool
     stats_pools = [
         'database', 'user', 'cl_active', 'cl_waiting', 'sv_active', 'sv_idle',
-        'sv_used', 'sv_tested', 'sv_login', 'maxwait', 'pool_mode',
+        'sv_used', 'sv_tested', 'sv_login', 'maxwait', 'maxwait_us',
+        'pool_mode',
     ]
     cur.execute('SHOW POOLS')
     for row in cur.fetchall():
@@ -76,8 +77,10 @@ def main():
 
     # Detailed statistics per pool
     stats_data = [
-        'database', 'total_requests', 'total_received', 'total_sent',
-        'total_query_time', 'avg_req', 'avg_recv', 'avg_sent', 'avg_query',
+        'database', 'total_xact_count', 'total_query_count', 'total_received',
+        'total_sent', 'total_xact_time', 'total_query_time', 'total_wait_time',
+        'avg_xact_count', 'avg_query_count', 'avg_recv', 'avg_sent',
+        'avg_xact_time', 'avg_query_time', 'avg_wait_time',
     ]
     cur.execute('SHOW STATS')
     for row in cur.fetchall():
