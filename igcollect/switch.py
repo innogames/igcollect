@@ -63,6 +63,18 @@ COUNTERS = {
     'ifOutDiscards': '1.3.6.1.2.1.2.2.1.19',
 }
 
+COUNTERS_IGNORE = {
+    'force10_mxl': {
+        # This counter is required to distinguish packets discarded due to port
+        # being disabled by STP from other types of discarded packets.
+        # Due to nature of couters this will never reach exact 0.
+        # Of course it would be way better to totally ignore counters of ports
+        # blocked by STP but I can't find such information in any MIB.
+        'ifInDiscards': '1.3.6.1.4.1.6027.3.27.1.3.1.3',
+    },
+}
+
+
 
 class SwitchException(Exception):
     pass
@@ -89,7 +101,7 @@ def main():
 
     cpu_stats(args.prefix, snmp, model)
     monitored_ports = get_monitored_ports(snmp, model)
-    ports_stats(args.prefix, snmp, monitored_ports)
+    ports_stats(args.prefix, snmp, monitored_ports, model)
 
 
 def parse_args():
@@ -303,16 +315,24 @@ def standarize_portname(port_name):
     return None
 
 
-def ports_stats(prefix, snmp, ports):
+def ports_stats(prefix, snmp, ports, model):
     """ Print graphite-compatible stats for each port of switch """
 
     for counter, oid in COUNTERS.items():
         # SNMP is slow that we want need to get current time for each counter.
         template = prefix + '.ports.{}.{} {} ' + str(int(time()))
         table = get_snmp_table(snmp, oid)
+        table_ignore = []
+        if model in COUNTERS_IGNORE and counter in COUNTERS_IGNORE[model]:
+            table_ignore = get_snmp_table(
+                snmp, COUNTERS_IGNORE[model][counter]
+            )
         for port_idx, port_name in ports.items():
             if port_idx in table:
-                print(template.format(port_name, counter, table[port_idx]))
+                data = table[port_idx]
+                if port_idx in table_ignore:
+                    data -= table_ignore[port_idx]
+                print(template.format(port_name, counter, data))
 
 
 def cpu_stats(prefix, snmp, model):
