@@ -5,7 +5,42 @@ Copyright (c) 2016 InnoGames GmbH
 """
 
 from argparse import ArgumentParser
+from os import path, listdir
+from re import match
 from time import time
+
+METRIC_NAMES = {
+    'disk': (
+        ('major', None),
+        ('minor', None),
+        ('name', None),
+        ('reads', 'iopsRead'),
+        ('reads_merged', None),
+        ('sec_read', 'bytesRead'),
+        ('ms_read', 'ioTimeMsRead'),
+        ('writes', 'iopsWrite'),
+        ('writes_merged', None),
+        ('sec_written', 'bytesWrite'),
+        ('ms_written', 'ioTimeMsWrite'),
+        ('cur_iops', 'ioOpsInProgress'),
+        ('ms_io', 'ioTimeMs'),
+        ('weighted_ms_io', None),
+    ),
+    'zfs': (
+        ('nread', 'bytesRead'),
+        ('nwritten', 'bytesWrite'),
+        ('reads', 'iopsRead'),
+        ('writes', 'iopsWrite'),
+        ('wtime', None),
+        ('wlentime', None),
+        ('wupdate', None),
+        ('rtime', None),
+        ('rlentime', None),
+        ('rupdate', None),
+        ('wcnt', 'ioOpsInProgress'),
+        ('rcnt', None),
+    )
+}
 
 
 def parse_args():
@@ -17,51 +52,78 @@ def parse_args():
 def main():
     args = parse_args()
     template = args.prefix + '.{}.{} {} ' + str(int(time()))
-    sector_size = 512
-    dd = get_diskstats_dict()
-    metric_names = (
-        ('sec_read', 'bytesRead'),
-        ('sec_written', 'bytesWrite'),
-        ('reads', 'iopsRead'),
-        ('writes', 'iopsWrite'),
-        ('ms_read', 'ioTimeMsRead'),
-        ('ms_written', 'ioTimeMsWrite'),
-        ('ms_io', 'ioTimeMs'),
-        ('cur_iops', 'ioOpsInProgress'),
-    )
-    for disk in dd:
-        # Filter for only normal disks and partitions
-        if not any(disk.startswith(p) for p in ('sd', 'hd', 'xvd', 'vd')):
+    
+
+    for disk_name, disk_stats in dict(
+        list(get_diskstats_dict().items()) +
+        list(get_zpoolstats_dict().items())
+    ).items():
+        for stat_name, value in disk_stats.items():
+            if stat_name != 'type':
+                print(template.format(disk_name, stat_name, value))
+
+
+def get_zpoolstats_dict():
+    """Return a dictionary made from /proc/spl/kstat/zfs/"""
+
+    zfs_base = '/proc/spl/kstat/zfs'
+    if not path.isdir(zfs_base):
+        return {}
+
+    disk_type = 'zfs'
+    ret = {}
+
+    for zpool in listdir(zfs_base):
+        if not path.isdir('{}/{}'.format(zfs_base, zpool)):
             continue
-        for key, name in metric_names:
-            value = int(dd[disk][key])
-            if key.startswith('sec_'):
-                value *= sector_size
-            print(template.format(disk, name, value))
+        ret[zpool] = {'type': 'zfs'}
+        with open('{}/{}/io'.format(zfs_base, zpool) , 'r') as fp:
+            stats_found = False
+            for line in fp:
+                if line.startswith('nread'):
+                    # Disks stats are after line with headers
+                    stats_found = True
+                    continue
+                if stats_found:
+                    x = line.strip().split()
+                    ret[zpool] = {'type': disk_type}
+                    ret[zpool].update(read_metrics(x, METRIC_NAMES[disk_type]))
+                    
+    return ret
 
 
 def get_diskstats_dict():
     """Return a dictionary made from /proc/diskstats"""
-
-    diskstats_dict = {}
-    header = ['major', 'minor', 'name',
-              'reads', 'reads_merged', 'sec_read', 'ms_read',
-              'writes', 'writes_merged', 'sec_written', 'ms_written',
-              'cur_iops', 'ms_io', 'weighted_ms_io']
-
-    header.pop(2)  # Just to be able to have also the name in the header
+    
+    disk_type = 'disk'
+    ret = {}
 
     with open('/proc/diskstats', 'r') as fp:
         for line in fp:
-            # Here we have to handle some kind of disk first the name than
-            # the counters as mentioned in the header.
             x = line.strip().split()
-            disk_name = x.pop(2)
-            diskstats_dict[disk_name] = {}
-            for name in header:
-                diskstats_dict[disk_name][name] = x.pop(0)
+            disk_name = x[2]
+            # Filter for only normal disks and partitions
+            if not any(
+                disk_name.startswith(p) for p in ('sd', 'hd', 'xvd', 'vd')
+            ):
+                continue
+            ret[disk_name] = {'type': disk_type}
+            ret[disk_name].update(read_metrics(x, METRIC_NAMES[disk_type]))
 
-    return diskstats_dict
+    return ret
+
+
+def read_metrics(line, metrics):
+    sector_size = 512
+    ret = {}
+    for stat_key, stat_name in metrics:
+        value = line.pop(0)
+        if stat_name:
+            value = int(value)
+            if stat_key.startswith('sec_'):
+                value *= sector_size
+            ret[stat_name] = value
+    return(ret)
 
 
 if __name__ == '__main__':
