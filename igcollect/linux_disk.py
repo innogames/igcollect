@@ -102,10 +102,8 @@ def get_diskstats_dict():
         for line in fp:
             x = line.strip().split()
             disk_name = x[2]
-            # Filter for only normal disks and partitions
-            if not any(
-                disk_name.startswith(p) for p in ('sd', 'hd', 'xvd', 'vd')
-            ):
+            # Filter for only normal disks
+            if not match('^(xv|[shv])d[a-z]?$', disk_name):
                 continue
             ret[disk_name] = {'type': disk_type}
             ret[disk_name].update(read_metrics(x, METRIC_NAMES[disk_type]))
