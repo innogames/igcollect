@@ -33,8 +33,12 @@ def main():
     used_fields = [
         'Apps', 'PageTables', 'SwapCached', 'VmallocUsed', 'Slab',
         'Cached', 'Buffers', 'MemFree', 'Swap', 'Committed_AS',
-        'Mapped', 'Active', 'Inactive', 'MemTotal'
+        'Mapped', 'Active', 'Inactive', 'MemTotal',
     ]
+
+    # This metic is only available on a 3.14+ kernel
+    if 'MemAvailable' in meminfo:
+        used_fields.append('MemAvailable')
 
     template = args.prefix + '.{} {} ' + str(int(time()))
     for field in used_fields:
