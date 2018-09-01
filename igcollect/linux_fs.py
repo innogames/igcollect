@@ -21,7 +21,7 @@ def main():
     with open('/proc/mounts', 'r') as fp:
         for line in fp:
             a, mountpoint, fstype, a = line.split(' ', 3)
-            if fstype in ['ext2', 'ext3', 'ext4', 'xfs']:
+            if fstype in ['ext2', 'ext3', 'ext4', 'xfs', 'zfs']:
                 mountpoints.append(mountpoint)
 
     template = args.prefix + '.{}.{} {} ' + str(int(time()))
