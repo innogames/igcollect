@@ -14,6 +14,9 @@ from time import time
 import libvirt
 import xml.etree.ElementTree as ET
 
+# Keep this in sync with igvm!
+VG_NAME = 'xen-data'
+
 
 def parse_args():
     parser = ArgumentParser()
@@ -25,11 +28,12 @@ def parse_args():
 def main():
     args = parse_args()
     conn = libvirt.openReadOnly(None)
-    dom_ids = conn.listDomainsID()
     now = str(int(time()))
     core2node = get_cpu_core_to_numa_node_mapping()
-    for dom_id in dom_ids:
-        dom = conn.lookupByID(dom_id)
+
+    total_mem_used = 0
+
+    for dom in conn.listAllDomains():
         name = dom.name()
         if args.trim_domain:
             if name.endswith('.' + args.trim_domain):
@@ -40,9 +44,17 @@ def main():
         # Make hostname save for graphite
         name = name.replace('.', '_')
 
-        get_dom_vcpu_stats(dom, args.prefix, name, now, core2node)
-        get_dom_network_stats(dom, args.prefix, name, now)
-        get_dom_disk_stats(dom, args.prefix, name, now)
+        dom_state, dom_reason = dom.state()
+        if dom_state == libvirt.VIR_DOMAIN_RUNNING:
+            get_dom_vcpu_stats(dom, args.prefix, name, now, core2node)
+            get_dom_network_stats(dom, args.prefix, name, now)
+            get_dom_disk_stats(dom, args.prefix, name, now)
+
+        total_mem_used += get_dom_memory_stats(dom, args.prefix, name, now)
+        get_dom_storage_usage(conn, dom, args.prefix, name, now)
+
+    get_hv_storage_usage(conn, args.prefix, now)
+    get_hv_memory_usage(conn, args.prefix, now, total_mem_used)
 
 
 def get_dom_vcpu_stats(dom, prefix, name, now, core2node):
@@ -122,6 +134,69 @@ def get_dom_disk_stats(dom, prefix, name, now):
             .format(
                 prefix, name, dev, stats['wr_total_times'] / 1E6, now
             )
+        )
+
+
+def get_dom_memory_stats(dom, prefix, name, now):
+    memory_used = dom.info()[2]
+    print(
+        '{}.vserver.{}.memory.used {} {}'
+        .format(
+            prefix, name, memory_used, now,
+        )
+    )
+    return memory_used
+
+
+def get_hv_memory_usage(conn, prefix, now, memory_used):
+    memory_total = conn.getMemoryStats(-1)['total']
+    memory_free = memory_total - memory_used
+    print(
+        '{}.kvm.memory.total {} {}'
+        .format(prefix, memory_total, now)
+    )
+    print(
+        '{}.kvm.memory.used {} {}'
+        .format(prefix, memory_used, now)
+    )
+    print(
+        '{}.kvm.memory.free {} {}'
+        .format(prefix, memory_free, now)
+    )
+
+
+def get_hv_storage_usage(conn, prefix, now):
+    for storage_pool in conn.listAllStoragePools():
+        info = storage_pool.info()
+        name = storage_pool.name()
+
+        print(
+            '{}.kvm.storage_pool.{}.total {} {}'
+            .format(prefix, name, info[1] // 1024, now)
+        )
+        print(
+            '{}.kvm.storage_pool.{}.used {} {}'
+            .format(prefix, name, info[2] // 1024, now)
+        )
+        print(
+            '{}.kvm.storage_pool.{}.free {} {}'
+            .format(prefix, name, info[3] // 1024, now)
+        )
+
+
+def get_dom_storage_usage(conn, dom, prefix, name, now):
+    tree = ET.fromstring(dom.XMLDesc(0))
+    pool = tree.find('./devices/disk/source').get('pool')
+    vol  = tree.find('./devices/disk/source').get('volume')
+
+    if pool:
+        pool =conn.storagePoolLookupByName(pool)
+        vol = pool.storageVolLookupByName(vol)
+        info = vol.info()
+
+        print(
+            '{}.kvm.vserver.{}.storage.total {} {}'
+            .format(prefix, name, info[1] // 1024, now)
         )
 
 
