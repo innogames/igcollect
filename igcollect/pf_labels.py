@@ -8,6 +8,7 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from socket import gethostname
 from subprocess import check_output
+import json
 import re
 import time
 
@@ -24,6 +25,9 @@ def parse_pf_labels():
 
     label_counters = {}
 
+    known_pools = load_pools()
+    reverse_pools = { v['pf_name']: k for k, v in known_pools.items() }
+
     # Read all lines
     for line in pfctl_result.splitlines():
 
@@ -32,8 +36,9 @@ def parse_pf_labels():
 
         # Cut unnecessary things out of label
         label = line_tab[0].split(':')[0]
-        label = re.sub('_pub$', '', label)
-        label = re.sub('_loc$', '', label)
+        if label.startswith('pool_'):
+            label = re.sub('(pool_[0-9]+)_[46].*', '\g<1>', label)
+            label = reverse_pools[label].replace('.', '_')
 
         if label not in label_counters:
             label_counters[label] = {}
@@ -47,6 +52,11 @@ def parse_pf_labels():
             label_counters[label]['p_out'] += int(line_tab[6])
             label_counters[label]['b_out'] += int(line_tab[7])
     return label_counters
+
+
+def load_pools():
+    with open('/etc/iglb/iglb.json') as jsonfile:
+        return json.load(jsonfile)['lbpools']
 
 
 def main():
