@@ -21,7 +21,11 @@ def parse_args():
 
 def parse_pf_labels():
     # Get pfctl result of "show all labels"
-    pfctl_result = check_output(['/sbin/pfctl', '-q', '-sl'])
+    pfctl_result = check_output(
+        ['/sbin/pfctl', '-q', '-sl'],
+        universal_newlines=True,
+        close_fds=False,
+    )
 
     label_counters = {}
 

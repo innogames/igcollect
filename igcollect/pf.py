@@ -6,7 +6,7 @@ Copyright (c) 2016 InnoGames GmbH
 
 from __future__ import print_function
 from argparse import ArgumentParser
-from subprocess import Popen, PIPE
+from subprocess import check_output
 from time import time
 import re
 
@@ -43,11 +43,14 @@ def parse_args():
 
 def parse_pf_info():
 
-    pf_info_raw = Popen(('/sbin/pfctl', '-qvsi'), stdout=PIPE).\
-                  stdout.read().splitlines()
+    pf_info_raw = check_output(
+            ['/sbin/pfctl', '-qvsi'],
+            universal_newlines=True,
+            close_fds=False,
+    ).splitlines()
 
     pf_info = {}
-    for pf_info_graphite, (pf_info_section, pf_info_key) in PF_INFOS.iteritems():
+    for pf_info_graphite, (pf_info_section, pf_info_key) in PF_INFOS.items():
         key_re = re.compile('\s+{}'.format(pf_info_key))
         in_section = False
         for line in pf_info_raw:
@@ -65,7 +68,7 @@ def main():
 
     template = args.prefix + '.{} {} ' + str(int(time()))
 
-    for graphite_var, pf_val in parse_pf_info().iteritems():
+    for graphite_var, pf_val in parse_pf_info().items():
         print(template.format(graphite_var, pf_val))
 
 

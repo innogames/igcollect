@@ -6,8 +6,9 @@ Copyright (c) 2016 InnoGames GmbH
 
 from __future__ import print_function
 from argparse import ArgumentParser
-from subprocess import Popen, PIPE
 from time import time
+
+import sysctl
 
 # CPU usage is taken from kern.cp_times sysctl.
 # The result is a single row with numbers. Each 5 numbers form stats of one CPU.
@@ -21,8 +22,7 @@ def parse_args():
 
 def parse_cpu_stats():
     cpu_stats={}
-    cpu_times = Popen(('/sbin/sysctl', 'kern.cp_times'), stdout=PIPE).\
-               stdout.read().split(':')[1].split()
+    cpu_times = sysctl.filter('kern.cp_times')[0].value
 
     cpu = 0
     cpus = len(cpu_times)/5
@@ -38,7 +38,7 @@ def main():
     # Add extra 0 to CPU number for nice sorting in Grafana.
     template = args.prefix + '.{:02d}.{} {} ' + str(int(time()))
 
-    for index, cnt in parse_cpu_stats().iteritems():
+    for index, cnt in parse_cpu_stats().items():
         print(template.format(index, 'user', cnt[0]))
         print(template.format(index, 'nice', cnt[1]))
         print(template.format(index, 'system', cnt[2]))
