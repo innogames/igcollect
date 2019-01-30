@@ -199,8 +199,7 @@ def main():
                                      'replay_lag',
                                     )
             print(template.format(postfix, line['hostname'].replace('.', '_'),
-                                  line['replay_lag'])
-                  )
+                                  line['replay_lag']))
 
 
 def execute(conn, query, query_vars=()):
