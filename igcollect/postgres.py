@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """igcollect - PostgreSQL
 
-Copyright (c) 2017 InnoGames GmbH
+Copyright (c) 2019 InnoGames GmbH
 """
 
 from argparse import ArgumentParser
@@ -16,6 +16,7 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='postgres')
     parser.add_argument('--dbname', default='postgres')
+    parser.add_argument('--extended', action='store_true')
     return parser.parse_args()
 
 
@@ -30,7 +31,6 @@ def main():
 
     # To be formatted 2 times
     template = '{}.{{}}.{{}} {{}} {}'.format(args.prefix, int(time()))
-
     # Database statistics
     for line in execute(conn, (
         'SELECT pg_database_size(d.oid) as size,'
@@ -86,6 +86,120 @@ def main():
         if line['state']:
             key = line['state'].replace(' ', '_')
             print(template.format('activity', key, line['count']))
+
+    if args.extended:
+        # Per relations statistics:
+        rel_stat_tables = ['pg_stat_all_tables',
+                           'pg_statio_all_tables',
+                           'pg_stat_all_indexes',
+                           'pg_statio_all_indexes',
+                           ]
+        for stat_table in rel_stat_tables:
+            for line in execute(conn, (
+                'SELECT * FROM {}'.format(stat_table)
+            )):
+                for key, value in line.items():
+                    if (key not in ['schemaname',
+                                    'relname',
+                                    'relid',
+                                    'pid',
+                                    'indexrelname',
+                                    'indexrelid']
+                            and value):
+                        postfix = '{}.{}.{}'.format(stat_table,
+                                                    line['schemaname'],
+                                                    line['relname'],)
+                        if 'indexrelname' in line:
+                            postfix = '{}.{}.{}.{}'.format(stat_table,
+                                                           line['schemaname'],
+                                                           line['relname'],
+                                                           line['indexrelname'],
+                                                           )
+                        print(template.format(postfix, key, value))
+
+        # bgwriter (checkpoints)
+        for line in execute(conn, (
+                'SELECT * FROM pg_stat_bgwriter'
+        )):
+            for key, value in line.items():
+                print(template.format('bgwriter', key, value))
+
+        # Autovacuum
+        for line in execute(conn, ('''
+                SELECT relid::regclass::text as table,
+                    phase,
+                    heap_blks_total,
+                    heap_blks_scanned,
+                    heap_blks_vacuumed,
+                    index_vacuum_count,
+                    max_dead_tuples,
+                    num_dead_tuples
+                FROM pg_stat_progress_vacuum
+                WHERE datname = %s
+                '''), (args.dbname,)):
+
+            postfix = '{}.{}.{}.{}'.format('vacuum',
+                                           'tables',
+                                           line['table'],
+                                           line['phase'])
+            for key, value in line.items():
+                if key not in ['table', 'phase'] and value is not None:
+                    print(template.format(postfix, key, value))
+
+        # Autovacuum wraparound protection on tables
+        # https://www.cybertec-postgresql.com/en/autovacuum-wraparound-protection-in-postgresql/
+        for line in execute(conn, ('''
+                SELECT
+                    oid::regclass::text AS table,
+                    least(
+                        (SELECT setting::int
+                        FROM    pg_settings
+                        WHERE   name = 'autovacuum_freeze_max_age')
+                                        - age(relfrozenxid),
+                        (SELECT setting::int
+                        FROM    pg_settings
+                        WHERE   name = 'autovacuum_multixact_freeze_max_age')
+                                        - mxid_age(relminmxid)
+                        ) AS value
+                FROM    pg_class
+                WHERE   relfrozenxid != 0
+                AND oid > 16384''')):
+            postfix = '{}.{}.{}'.format('vacuum',
+                                        'tables',
+                                        line['table'])
+            print(template.format(postfix, 'tx_before_wraparound_vacuum',
+                                  line['value']))
+
+        # Locks
+        for line in execute(conn, (
+                'SELECT mode, count(1) as value FROM pg_locks GROUP BY mode'
+        )):
+            postfix = '{}.{}'.format('database',
+                                     'locks')
+            print(template.format(postfix, line['mode'], line['value']))
+
+        # Archiver
+        for line in execute(conn, (
+                'SELECT * FROM pg_stat_archiver'
+        )):
+            postfix = '{}.{}.{}'.format('database',
+                                        'wal',
+                                        'archiver')
+            for key, value in line.items():
+                if value is not None:
+                    print(template.format(postfix, key, value))
+
+         # Replication
+        for line in execute(conn, (
+                'SELECT client_hostname as hostname, '
+                'EXTRACT(EPOCH FROM replay_lag) as replay_lag '
+                'FROM pg_stat_replication'
+        )):
+            postfix = '{}.{}'.format('replication',
+                                     'replay_lag',
+                                    )
+            print(template.format(postfix, line['hostname'].replace('.', '_'),
+                                  line['replay_lag']))
 
 
 def execute(conn, query, query_vars=()):
