@@ -1,12 +1,21 @@
 #!/usr/bin/env python
 """igcollect - Artfiles Hosting Metrics
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright (c) 2019 InnoGames GmbH
 """
 
+import base64
 from argparse import ArgumentParser
 from time import time
-from urllib import urlopen
+
+try:
+    # Try importing the Python3 packages
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
+except ImportError:
+    # On failure, import the Python2
+    from urllib2 import Request, urlopen
+    from urllib import urlencode
 
 
 def parse_args():
@@ -31,13 +40,16 @@ def parse_args():
 
 def main():
     args = parse_args()
-    artfiles_url = (
-        'https://{}:{}@dcp.c.artfiles.de/api/stats/get_estats.html'
-        .format(args.http_user, args.http_pass)
-    )
-    data = urlopen(artfiles_url)
-    template = args.prefix + '.{}.{}.{}.{} {} ' + str(int(time()))
+    request = Request('https://dcp.c.artfiles.de/api/stats/get_estats.html')
+    credentials = '{}:{}'.format(args.http_user, args.http_pass)
+    base64credentials = base64.b64encode(credentials.encode())
+    request.add_header('Authorization',
+                       'Basic {}'.format(base64credentials.decode()))
+    data = urlopen(request)
+    template = args.prefix + '.{dc}.{rack}.{pdu_nr}.{unit} {value} ' + str(
+        int(time()))
     for csv in data.readlines():
+        csv = csv.decode()
         if csv.startswith('"level3"') or csv.startswith('"w408'):
             parse_and_print(template, csv)
 
@@ -45,7 +57,7 @@ def main():
 def parse_and_print(template, csv):
     values = [v.strip('\n "') for v in csv.split(',')]
     dc = values[0].replace('/', '_')
-    rack = values[1].translate(None, '/')
+    rack = values[1].replace('/', '')
     pdu_nr = values[2]
     maxcur = values[3]
     measurement_type = values[4]
@@ -53,19 +65,23 @@ def parse_and_print(template, csv):
     curval = values[6]
 
     if maxcur == '10A':
-        print(template.format(dc, rack, pdu_nr, 'max', '10.00'))
+        print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='max',
+                              value='10.00'))
     elif maxcur == '16A':
-        print(template.format(dc, rack, pdu_nr, 'max', '16.00'))
+        print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='max',
+                              value='16.00'))
     elif maxcur == 'redundant':
-        print(template.format(dc, rack, pdu_nr, 'max', '20.00'))
-
+        print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='max',
+                              value='20.00'))
     if measurement_type == 'ampere':
-        ampere = curval.translate(None, ' A')
-        print(template.format(dc, rack, pdu_nr, 'ampre', ampere))
+        ampere = curval.replace(' A', '')
+        print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='ampere',
+                              value=ampere))
 
     if measurement_type == 'kwh':
-        kwh = maxval_watt.translate(None, ' kWh')
-        print(template.format(dc, rack, pdu_nr, 'kwh', kwh))
+        kwh = maxval_watt.replace(' kWh', '')
+        print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='kwh',
+                              value=kwh))
 
 
 if __name__ == '__main__':

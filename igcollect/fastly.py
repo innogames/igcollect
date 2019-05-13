@@ -12,12 +12,13 @@ from time import time
 from argparse import ArgumentParser
 
 try:
+    # Try importing the Python3 packages
     from urllib.request import Request, urlopen
     from urllib.parse import urlencode
 except ImportError:
+    # On failure, import the Python2
     from urllib2 import Request, urlopen
     from urllib import urlencode
-
 
 FASTLY_BASE_URL = 'https://api.fastly.com'
 AVG_KEYS = ('hit_ratio', 'hits_time', 'miss_time')
@@ -190,7 +191,7 @@ def get_data(fastly_url, api_key):
     url = FASTLY_BASE_URL + fastly_url
     req = Request(url=url, headers={'Fastly-Key': api_key})
     fd = urlopen(req, timeout=10)
-    return json.loads(fd.read())
+    return json.loads(fd.read().decode())
 
 
 def format_key(entry, key):
