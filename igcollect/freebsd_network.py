@@ -6,7 +6,7 @@ Copyright (c) 2016 InnoGames GmbH
 
 from __future__ import print_function
 from argparse import ArgumentParser
-from subprocess import Popen, PIPE
+from subprocess import check_output
 from time import time
 
 # Translate netstat columns to what we store in Graphite
@@ -41,15 +41,24 @@ def parse_args():
 
 def parse_netstat():
     iface_info={}
-    ifaces = Popen(('/sbin/ifconfig', '-l'), stdout=PIPE).stdout.read().split()
+
+    ifaces = check_output(
+        ['/sbin/ifconfig', '-l'],
+        universal_newlines=True,
+        close_fds=False,
+    ).split()
+
     for iface in ifaces:
         iface_info[iface] = {}
         # 0th line is header, 1st line is link information,
         # follwing lines are stats per subnet on interface
-        netstat = Popen(
-            ('/usr/bin/netstat', '-I', iface, '-nbd'),
-            stdout=PIPE).stdout.read().splitlines()[1].split()
-        for column, index in NETSTAT_COLUMNS.iteritems():
+        netstat = check_output(
+            ['/usr/bin/netstat', '-I', iface, '-nbd'],
+            universal_newlines=True,
+            close_fds=False,
+        ).splitlines()[1].split()
+
+        for column, index in NETSTAT_COLUMNS.items():
             if len(netstat) == 12:
                 # Tunnel interfaces have no MAC
                 index -= 1
@@ -63,8 +72,8 @@ def main():
 
     template = args.prefix + '.{}.{} {} ' + str(int(time()))
 
-    for iface, iface_info in parse_netstat().iteritems():
-        for name, value in iface_info.iteritems():
+    for iface, iface_info in parse_netstat().items():
+        for name, value in iface_info.items():
             print(template.format(iface, name, value))
 
 
