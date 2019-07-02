@@ -132,9 +132,9 @@ class Metric:
                     if 'percentage' in self.function:
                         return float(
                             self.get_count_percentage(
-                                int(self.function.split('_')[1])))
+                                float(self.function.split('_')[1])))
                     return float(
-                        self.get_count(int(self.function.split('_')[1])))
+                        self.get_count(float(self.function.split('_')[1])))
                 return float(getattr(self, 'get_' + self.function)())
             return float(self.get_last_value())
         return 0
