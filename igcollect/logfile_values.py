@@ -15,7 +15,7 @@ count_100_percentage - estimates percentage of values > 100
 python logfile_values.py --metric "metric1:1:mean:1d" \
                          --metric "metric2:3:count:60s"
 
-Copyright (c) 2018 InnoGames GmbH
+Copyright (c) 2019 InnoGames GmbH
 """
 
 import re
@@ -133,18 +133,17 @@ class Metric:
         return d
 
     def get_metric_value(self):
-
         if not self.values:
             return 0
 
         if not self.function:
             return float(self.get_last_value())
 
-        if 'distribution' in self.function:
+        if self.function == 'distribution':
             return getattr(self, 'get_' + self.function)()
 
-        if 'count_' in self.function:
-            if 'percentage' in self.function:
+        if self.function.startswith('count'):
+            if self.function.endswith('percentage'):
                 return float(
                     self.get_count_percentage(
                         int(self.function.split('_')[1])))
@@ -169,13 +168,14 @@ def parse_args():
 
 def get_metrics_values(line, metrics, time_format, columns_num, time_column):
     fields = line.split()
-    timestamp = convert_to_timestamp(fields[time_column], time_format)
-    for metric in metrics:
-        if timestamp > metric.now - metric.get_timeshift():
-            value = metric.estimate_columns_value(fields)
-            metric.values.append(value)
-        else:
-            return False
+    if len(fields) == columns_num:
+        timestamp = convert_to_timestamp(fields[time_column], time_format)
+        for metric in metrics:
+            if timestamp > metric.now - metric.get_timeshift():
+                value = metric.estimate_columns_value(fields)
+                metric.values.append(value)
+            else:
+                return False
     return True
 
 
@@ -225,8 +225,10 @@ def read_logfile_reverse(filename,
                 if buffer[-1] is not '\n':
                     lines[-1] += segment
                 else:
-                    yield get_metrics_values(segment, metrics, time_format,
-                                             columns_num, time_column)
+                    yield get_metrics_values(
+                                            segment, metrics, time_format,
+                                            columns_num, time_column
+                                        )
             segment = lines[0]
             for index in range(len(lines) - 1, 0, -1):
                 global_index += 1
@@ -291,10 +293,13 @@ def main():  # NOQA: C901
                         'Parsing archive file: {}'.format(f))
                     with gzip.open(archive_file, 'rt', encoding='utf-8') as fh:
                         for line in fh:
-                            get_metrics_values(line, args.metric,
-                                               args.time_format,
-                                               args.columns_num,
-                                               args.time_column,)
+                            get_metrics_values(
+                                            line,
+                                            args.metric,
+                                            args.time_format,
+                                            args.columns_num,
+                                            args.time_column,
+                                        )
 
     for metric in args.metric:
         template = args.prefix + '.{} {} ' + str(metric.now)
