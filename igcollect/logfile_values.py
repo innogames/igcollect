@@ -142,7 +142,7 @@ class Metric:
         if self.function == 'distribution':
             return getattr(self, 'get_' + self.function)()
 
-        if self.function.startswith('count'):
+        if self.function.startswith('count_'):
             if self.function.endswith('percentage'):
                 return float(
                     self.get_count_percentage(
@@ -168,14 +168,16 @@ def parse_args():
 
 def get_metrics_values(line, metrics, time_format, columns_num, time_column):
     fields = line.split()
-    if len(fields) == columns_num:
-        timestamp = convert_to_timestamp(fields[time_column], time_format)
-        for metric in metrics:
-            if timestamp > metric.now - metric.get_timeshift():
-                value = metric.estimate_columns_value(fields)
-                metric.values.append(value)
-            else:
-                return False
+    if len(fields) != columns_num:
+        return True
+
+    timestamp = convert_to_timestamp(fields[time_column], time_format)
+    for metric in metrics:
+        if timestamp > metric.now - metric.get_timeshift():
+            value = metric.estimate_columns_value(fields)
+            metric.values.append(value)
+        else:
+            return False
     return True
 
 
@@ -226,9 +228,9 @@ def read_logfile_reverse(filename,
                     lines[-1] += segment
                 else:
                     yield get_metrics_values(
-                                            segment, metrics, time_format,
-                                            columns_num, time_column
-                                        )
+                        segment, metrics, time_format,
+                        columns_num, time_column
+                    )
             segment = lines[0]
             for index in range(len(lines) - 1, 0, -1):
                 global_index += 1
@@ -294,12 +296,12 @@ def main():  # NOQA: C901
                     with gzip.open(archive_file, 'rt', encoding='utf-8') as fh:
                         for line in fh:
                             get_metrics_values(
-                                            line,
-                                            args.metric,
-                                            args.time_format,
-                                            args.columns_num,
-                                            args.time_column,
-                                        )
+                                line,
+                                args.metric,
+                                args.time_format,
+                                args.columns_num,
+                                args.time_column,
+                            )
 
     for metric in args.metric:
         template = args.prefix + '.{} {} ' + str(metric.now)
