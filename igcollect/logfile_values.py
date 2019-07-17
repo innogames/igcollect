@@ -157,7 +157,7 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='logfile_values')
     parser.add_argument('--file', default='/var/log/messages')
-    parser.add_argument('--columns-num', default='5', type=int)
+    parser.add_argument('--columns-num', default='0', type=int)
     parser.add_argument('--metric', type=Metric, nargs='+')
     parser.add_argument('--time-column', default='0', type=int)
     parser.add_argument('--time-format', default='%Y-%m-%dT%H:%M:%S%z')
@@ -168,7 +168,7 @@ def parse_args():
 
 def get_metrics_values(line, metrics, time_format, columns_num, time_column):
     fields = line.split()
-    if len(fields) != columns_num:
+    if columns_num and len(fields) != columns_num:
         return True
 
     timestamp = convert_to_timestamp(fields[time_column], time_format)
