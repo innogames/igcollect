@@ -15,7 +15,7 @@ count_100_percentage - estimates percentage of values > 100
 python logfile_values.py --metric "metric1:1:mean:1d" \
                          --metric "metric2:3:count:60s"
 
-Copyright (c) 2018 InnoGames GmbH
+Copyright (c) 2019 InnoGames GmbH
 """
 
 import re
@@ -125,43 +125,59 @@ class Metric:
         # Speed :-/?
         return self.get_sum() / self.get_timeshift()
 
+    def get_distribution(self):
+        d = {}
+        uniq_values = set(self.values)
+        for v in uniq_values:
+            d[int(v)] = self.values.count(v)
+        return d
+
     def get_metric_value(self):
-        if self.values:
-            if self.function:
-                if 'count_' in self.function:
-                    if 'percentage' in self.function:
-                        return float(
-                            self.get_count_percentage(
-                                int(self.function.split('_')[1])))
-                    return float(
-                        self.get_count(int(self.function.split('_')[1])))
-                return float(getattr(self, 'get_' + self.function)())
+        if not self.values:
+            return 0
+
+        if not self.function:
             return float(self.get_last_value())
-        return 0
+
+        if self.function == 'distribution':
+            return getattr(self, 'get_' + self.function)()
+
+        if self.function.startswith('count_'):
+            if self.function.endswith('percentage'):
+                return float(
+                    self.get_count_percentage(
+                        int(self.function.split('_')[1])))
+            return float(
+                self.get_count(int(self.function.split('_')[1])))
+
+        return float(getattr(self, 'get_' + self.function)())
 
 
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='logfile_values')
     parser.add_argument('--file', default='/var/log/messages')
-    parser.add_argument('--columns-num', default='5', type=int)
+    parser.add_argument('--columns-num', default='0', type=int)
     parser.add_argument('--metric', type=Metric, nargs='+')
+    parser.add_argument('--time-column', default='0', type=int)
     parser.add_argument('--time-format', default='%Y-%m-%dT%H:%M:%S%z')
     parser.add_argument('--arch', action='store_true')
     parser.add_argument('--debug', '-d', action='store_true')
     return parser.parse_args()
 
 
-def get_metrics_values(line, metrics, time_format, columns_num):
+def get_metrics_values(line, metrics, time_format, columns_num, time_column):
     fields = line.split()
-    if len(fields) == columns_num:
-        timestamp = convert_to_timestamp(fields[0], time_format)
-        for metric in metrics:
-            if timestamp > metric.now - metric.get_timeshift():
-                value = metric.estimate_columns_value(fields)
-                metric.values.append(value)
-            else:
-                return False
+    if columns_num and len(fields) != columns_num:
+        return True
+
+    timestamp = convert_to_timestamp(fields[time_column], time_format)
+    for metric in metrics:
+        if timestamp > metric.now - metric.get_timeshift():
+            value = metric.estimate_columns_value(fields)
+            metric.values.append(value)
+        else:
+            return False
     return True
 
 
@@ -173,6 +189,7 @@ def get_metrics_last_value(line, metrics):
 
 def read_logfile_reverse(filename,
                          columns_num,
+                         time_column,
                          time_format,
                          metrics,
                          buf_size=8192):
@@ -210,8 +227,10 @@ def read_logfile_reverse(filename,
                 if buffer[-1] is not '\n':
                     lines[-1] += segment
                 else:
-                    yield get_metrics_values(segment, metrics, time_format,
-                                             columns_num)
+                    yield get_metrics_values(
+                        segment, metrics, time_format,
+                        columns_num, time_column
+                    )
             segment = lines[0]
             for index in range(len(lines) - 1, 0, -1):
                 global_index += 1
@@ -219,10 +238,10 @@ def read_logfile_reverse(filename,
                     if global_index == 1:
                         get_metrics_last_value(lines[index], metrics)
                     yield get_metrics_values(lines[index], metrics,
-                                             time_format, columns_num)
+                                             time_format, columns_num, time_column)
 
     if segment is not None:
-        yield get_metrics_values(segment, metrics, time_format, columns_num)
+        yield get_metrics_values(segment, metrics, time_format, columns_num, time_column)
 
 
 def convert_to_timestamp(time_str, time_format):
@@ -254,7 +273,9 @@ def main():  # NOQA: C901
 
     # Read from the end of file until the timestamp is satisfying conditions
     data = read_logfile_reverse(
-        args.file, args.columns_num, args.time_format, metrics=args.metric)
+        args.file, args.columns_num, args.time_column,
+        args.time_format, metrics=args.metric
+    )
     for log_value in data:
         # Stop reading if next line has bigger timestamp as a required
         if not log_value:
@@ -274,14 +295,22 @@ def main():  # NOQA: C901
                         'Parsing archive file: {}'.format(f))
                     with gzip.open(archive_file, 'rt', encoding='utf-8') as fh:
                         for line in fh:
-                            get_metrics_values(line, args.metric,
-                                               args.time_format,
-                                               args.columns_num)
+                            get_metrics_values(
+                                line,
+                                args.metric,
+                                args.time_format,
+                                args.columns_num,
+                                args.time_column,
+                            )
 
     for metric in args.metric:
         template = args.prefix + '.{} {} ' + str(metric.now)
-        print(template.format(metric.name, metric.get_metric_value()))
-
+        value = metric.get_metric_value()
+        if isinstance(value, dict):
+            for k, v in value.items():
+                print(template.format(metric.name + '.' + str(k), v))
+        else:
+            print(template.format(metric.name, metric.get_metric_value()))
 
 if __name__ == '__main__':
     main()
