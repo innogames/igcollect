@@ -32,6 +32,14 @@ PF_INFOS = {
     'src_node_insert': ('Source Tracking Table', 'inserts'),
     'src_node_search': ('Source Tracking Table', 'searches'),
     'src_node_removal': ('Source Tracking Table', 'removals'),
+    'drop_state_mismatch': ('Counters', 'state-mismatch'),
+    'drop_map_failed': ('Counters', 'map-failed'),
+    'drop_proto_checksum': ('Counters', 'proto-cksum'),
+    'drop_fragment': ('Counters', 'fragment'),
+    'drop_short': ('Counters', 'short'),
+    'drop_normalize': ('Counters', 'normalize'),
+    'drop_state_limit': ('Counters', 'state-limit'),
+    'drop_state_insert': ('Counters', 'state-insert'),
 }
 
 
@@ -42,11 +50,10 @@ def parse_args():
 
 
 def parse_pf_info():
-
     pf_info_raw = check_output(
-            ['/sbin/pfctl', '-qvsi'],
-            universal_newlines=True,
-            close_fds=False,
+        ['/sbin/pfctl', '-qvsi'],
+        universal_newlines=True,
+        close_fds=False,
     ).splitlines()
 
     pf_info = {}
