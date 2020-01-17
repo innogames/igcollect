@@ -33,7 +33,8 @@ def main():
     used_fields = [
         'Apps', 'PageTables', 'SwapCached', 'VmallocUsed', 'Slab',
         'Cached', 'Buffers', 'MemFree', 'Swap', 'Committed_AS',
-        'Mapped', 'Active', 'Inactive', 'MemTotal',
+        'Mapped', 'Active', 'Inactive', 'MemTotal', 'SUnreclaim',
+        'SReclaimable', 'KernelStack', 'CommitLimit'
     ]
 
     # This metic is only available on a 3.14+ kernel
