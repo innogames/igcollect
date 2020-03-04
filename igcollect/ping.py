@@ -4,56 +4,65 @@
 Copyright (c) 2020 InnoGames GmbH
 """
 
-import _thread
+# this script is used to collect ping data to evaluate availability and latency
+# of our network (this should replace smokeping in the longrun)
+#
+# Please Not that the package fping has to be installed on your Linux server!
+
+
 import argparse
 import subprocess
+import time
 
-from time import time, sleep
+from multiprocessing import Pool
+from os import cpu_count
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Ping colecctor script for Graphana ')
-    parser.add_argument('adress', metavar='URL', type=str, nargs='+',
-                        help='the address zu ping to')
+        description='Ping collector script for Graphite ')
+    parser.add_argument('hosts', metavar='h', nargs='+',
+                        help='the adresses to ping')
     parser.add_argument('-c', '--count', type=int, default=20,
-                        help='how many tims should the script tries to ping')
-    parser.add_argument('--prefix', default='ping',
-                        help='the path to the value in Graphana')
+                        help='how many times should the script tries to ping')
+    parser.add_argument('-p', '--prefix', default='ping',
+                        help='the path to the value in Graphite')
+    parser.add_argument('-t', '--timeout', type=int, default=300,
+                        help='time in milliseconds'
+                             ' till the timeout is retched')
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    hostname = args.adress
-    count = args.count
-    prefix = args.prefix
 
-    i = 1
-    hosts = ''
-    for host in hostname:
-        hosts += host + ' '
-        if i % 10 == 0:
-            _thread.start_new_thread(ping, (prefix, hosts, count))
-            hosts = ''
-    if hosts != '':
-        ping(prefix, hosts, count)
-
-    while _thread._count() > 0:
-        sleep(1)
+    with Pool(cpu_count() * 2) as p:
+        for i in range(len(args.hosts) % 10):
+            p.starmap(ping, [(args.prefix, args.hosts[i*10:i*10+9],
+                              args.count, args.timeout)])
+        p.starmap(ping, [(args.prefix,
+                          args.hosts[(len(args.hosts) % 10) * 10:
+                                     len(args.hosts) - 1],
+                          args.count, args.timeout)])
 
 
-def ping(prefix, hosts, count):
-    cmd = ('fping -B1 -q -C {} -p {} {}'.format(count, (20/count)*2000, hosts))
-    fping = subprocess.getoutput(cmd)
-    output = fping.split('\n')
+def ping(prefix, hosts, count, timeout):
+    hosts_string = " ".join(hosts)
+    # -p calculates the time fping waits between single ping probes
+    cmd = ('fping -B1 -q -C {} -p {} -t {} {}'.format(count, (20/count) * 1800,
+                                                      timeout, hosts_string))
+    output = subprocess.getoutput(cmd).split('\n')
     for line in output:
         data = {}
-        part = line.split(':')
-        data['dest'] = part[0].replace(' ', '').replace('.', '_')
-        pings = part[1].split(' ')
-        i = 1
+        parts = line.split(':')
+        data['dest'] = parts[0].replace(' ', '').replace('.', '_')
+        pings = parts[1].split(' ')
+        # first value would be empty
+        pings.pop(0)
+
+        print(pings)
         avg = 0
-        while i <= count:
+        for i, ping in enumerate(pings):
             if pings[i] == '-':
                 data['ping{}'.format(i)] = -1
             else:
@@ -61,12 +70,10 @@ def ping(prefix, hosts, count):
                 avg += float(pings[i])
             i += 1
 
-        avg /= count
-        if avg == 0.0:
-            data['avg'] = '-'
-        else:
-            data['avg'] = avg
-        pings = pings[1:]
+        avg /= len(pings)
+        data['avg'] = avg
+
+        pings = pings[0:]
         data['max'] = max(pings)
         data['min'] = min(pings)
 
@@ -74,13 +81,13 @@ def ping(prefix, hosts, count):
 
 
 def send(prefix, data, count):
-    template = prefix + '.{}.{} {} ' + str(int(time()))
+    template = str(prefix) + '.{}.{} {} ' + str(int(time.time()))
 
     fails = 0
     for num in range(count):
         print(template.format(data['dest'], 'ping' + str(num + 1),
-                              data['ping' + str(num + 1)]))
-        if data['ping' + str(num + 1)] == -1:
+                              data['ping' + str(num)]))
+        if data['ping' + str(num)] == -1:
             fails += 1
 
     print(template.format(data['dest'], 'fails', fails))
