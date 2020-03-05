@@ -23,8 +23,11 @@ def parse_args():
         description='Ping collector script for Graphite ')
     parser.add_argument('hosts', nargs='+',
                         help='the hosts to ping')
-    parser.add_argument('-c', '--count', type=int, default=20,
-                        help='how many times the script will try to ping')
+    parser.add_argument('-c', '--count', type=int, default=20, 
+                        choices=range(1,60),
+                        help='how many times the script will try to ping '
+                             '(number has to be bigger '
+                             'than 1 and smaller than 60)')
     parser.add_argument('-p', '--prefix', default='ping',
                         help='the path to the value in Graphite')
     parser.add_argument('-t', '--timeout', type=int, default=300,
@@ -49,29 +52,30 @@ def main():
 def check_pings(prefix, hosts, count, timeout):
     values = pings(hosts, count, timeout)
 
+    timestamp = str(int(time.time()))
+
     for data in values:
-        send(prefix, data)
+        send(prefix, data, timestamp)
     
 
 def pings(hosts, count, timeout):
     hosts_string = " ".join(hosts)
     # -p calculates the time fping waits between single ping probes
-    # fping used 20 probes/min by default und set this value to 1800
+    # with 20 probes and 1800 milliseconds in between it takes roughly 1 minute
     # if you use 30 probes the -p time should goe down, for 10 up
-    # 0 would not make any sense to enter in to this script
     cmd = 'fping -B1 -q -C {} -p {} -t {} {}'
     cmd = cmd.format(count, (20/count) * 1800, timeout, hosts_string)
 
+    # example.com : 105.94 - 104.78
+    # Showing times for each ping. A ping timeout will be shown as '-'.
     output = subprocess.getoutput(cmd).split('\n')
 
     values = []
     for line in output:
         data = {}
-        parts = line.split(':')
-        data['dest'] = parts[0].replace(' ', '').replace('.', '_')
-        pings = parts[1].split(' ')
-        # first value would be empty
-        pings.pop(0)
+        parts = line.split(':', 1)
+        data['dest'] = parts[0].strip(' ').replace('.', '_')
+        pings = parts[1].split()
 
         data['max'] = max(pings)
         data['min'] = min(pings)
@@ -86,9 +90,12 @@ def pings(hosts, count, timeout):
                 total += float(pings[i])
 
         data['pings'] = pings
-
-        avg = total / len(pings)
-        data['avg'] = avg
+        if (len(pings) <= fails):
+            data['avg'] = -1
+        else:
+            avg = total / (len(pings) - fails)
+            data['avg'] = avg
+            
         data['fails'] = fails
 
         values.append(data)
@@ -96,9 +103,9 @@ def pings(hosts, count, timeout):
     return values
 
 
-def send(prefix, data):
+def send(prefix, data, timestamp):
     template = \
-        str(prefix) + '.' + data['dest'] + '.{} {} ' + str(int(time.time()))
+        str(prefix) + '.' + data['dest'] + '.{} {} ' + timestamp
 
     for num in range(len(data['pings'])):
         print(template.format('ping' + str(num + 1), data['pings'][num]))
