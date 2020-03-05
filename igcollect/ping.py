@@ -21,15 +21,15 @@ from os import cpu_count
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Ping collector script for Graphite ')
-    parser.add_argument('hosts', metavar='h', nargs='+',
-                        help='the adresses to ping')
+    parser.add_argument('hosts', nargs='+',
+                        help='the hosts to ping')
     parser.add_argument('-c', '--count', type=int, default=20,
-                        help='how many times should the script tries to ping')
+                        help='how many times the script will try to ping')
     parser.add_argument('-p', '--prefix', default='ping',
                         help='the path to the value in Graphite')
     parser.add_argument('-t', '--timeout', type=int, default=300,
-                        help='time in milliseconds'
-                             ' till the timeout is retched')
+                        help='time in milliseconds '
+                             'till the timeout is retched')
     return parser.parse_args()
 
 
@@ -43,11 +43,17 @@ def main():
             for chunk in chunked_hosts]
 
     with Pool(cpu_count() * 2) as p:
-        p.starmap(ping, data)
+        p.starmap(check_pings, data)
 
 
+def check_pings(prefix, hosts, count, timeout):
+    values = pings(hosts, count, timeout)
 
-def ping(prefix, hosts, count, timeout):
+    for data in values:
+        send(prefix, data)
+    
+
+def pings(hosts, count, timeout):
     hosts_string = " ".join(hosts)
     # -p calculates the time fping waits between single ping probes
     # fping used 20 probes/min by default und set this value to 1800
@@ -57,6 +63,8 @@ def ping(prefix, hosts, count, timeout):
     cmd = cmd.format(count, (20/count) * 1800, timeout, hosts_string)
 
     output = subprocess.getoutput(cmd).split('\n')
+
+    values = []
     for line in output:
         data = {}
         parts = line.split(':')
@@ -65,41 +73,42 @@ def ping(prefix, hosts, count, timeout):
         # first value would be empty
         pings.pop(0)
 
-        avg = 0
-        for i, ping in enumerate(pings):
-            if pings[i] == '-':
-                data['ping{}'.format(i)] = -1
-            else:
-                data['ping{}'.format(i)] = pings[i]
-                avg += float(pings[i])
-            i += 1
-
-        avg /= len(pings)
-        data['avg'] = avg
-
-        pings = pings[0:]
         data['max'] = max(pings)
         data['min'] = min(pings)
+        
+        total = 0
+        fails = 0
+        for i, ping in enumerate(pings):
+            if ping == '-':
+                pings[i] = -1
+                fails += 1
+            else:
+                total += float(pings[i])
 
-        send(prefix, data, count)
+        data['pings'] = pings
+
+        avg = total / len(pings)
+        data['avg'] = avg
+        data['fails'] = fails
+
+        values.append(data)
+
+    return values
 
 
-def send(prefix, data, count):
-    template = str(prefix) + '.{}.{} {} ' + str(int(time.time()))
+def send(prefix, data):
+    template = \
+        str(prefix) + '.' + data['dest'] + '.{} {} ' + str(int(time.time()))
 
-    fails = 0
-    for num in range(count):
-        print(template.format(data['dest'], 'ping' + str(num + 1),
-                              data['ping' + str(num)]))
-        if data['ping' + str(num)] == -1:
-            fails += 1
+    for num in range(len(data['pings'])):
+        print(template.format('ping' + str(num + 1), data['pings'][num]))
 
-    print(template.format(data['dest'], 'fails', fails))
-    print(template.format(data['dest'], 'fails/1', fails / count))
+    print(template.format('fails', data['fails']))
+    print(template.format('fails/1', data['fails'] / len(data['pings'])))
 
-    print(template.format(data['dest'], 'min', data['min']))
-    print(template.format(data['dest'], 'max', data['max']))
-    print(template.format(data['dest'], 'avg', data['avg']))
+    print(template.format('min', data['min']))
+    print(template.format('max', data['max']))
+    print(template.format('avg', data['avg']))
 
 
 if __name__ == '__main__':
