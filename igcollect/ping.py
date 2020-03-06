@@ -31,9 +31,9 @@ def parse_args():
                              'than 1 and smaller than 60) (default= 20)')
     parser.add_argument('-p', '--prefix',
                         default='servers.{}.system.ping'.format(
-                            socket.gethostname()),
+                            socket.gethostname().replace('.', '_')),
                         help='the path to the value in Graphite '
-                             '(default= ping)')
+                             '(default= servers.(hostname).system.ping)')
     parser.add_argument('-t', '--timeout', type=int, default=300,
                         help='time in milliseconds '
                              'till the timeout is retched (default= 300)')
