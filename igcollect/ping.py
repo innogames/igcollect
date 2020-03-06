@@ -13,6 +13,7 @@ Copyright (c) 2020 InnoGames GmbH
 import argparse
 import subprocess
 import time
+import socket
 
 from multiprocessing import Pool
 from os import cpu_count
@@ -28,7 +29,9 @@ def parse_args():
                         help='how many times the script will try to ping '
                              '(number has to be bigger '
                              'than 1 and smaller than 60) (default= 20)')
-    parser.add_argument('-p', '--prefix', default='ping',
+    parser.add_argument('-p', '--prefix',
+                        default='servers.{}.system.ping'.format(
+                            socket.gethostname()),
                         help='the path to the value in Graphite '
                              '(default= ping)')
     parser.add_argument('-t', '--timeout', type=int, default=300,
