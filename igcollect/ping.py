@@ -27,12 +27,17 @@ def parse_args():
                         choices=range(1,60),
                         help='how many times the script will try to ping '
                              '(number has to be bigger '
-                             'than 1 and smaller than 60)')
+                             'than 1 and smaller than 60) (default= 20)')
     parser.add_argument('-p', '--prefix', default='ping',
-                        help='the path to the value in Graphite')
+                        help='the path to the value in Graphite '
+                             '(default= ping)')
     parser.add_argument('-t', '--timeout', type=int, default=300,
                         help='time in milliseconds '
-                             'till the timeout is retched')
+                             'till the timeout is retched (default= 300)')
+    parser.add_argument('-d', '--delay', type=int, default=1800,
+                        choices=range(0,5000),
+                        help='time to wait between a series of pings '
+                             '(default= 1800)')
     return parser.parse_args()
 
 
@@ -42,29 +47,28 @@ def main():
     chunked_hosts = [args.hosts[i:i + 10]
                      for i in range(0, len(args.hosts), 10)]
 
-    data = [(args.prefix, chunk, args.count, args.timeout)
+    data = [(args.prefix, chunk, args.count, args.timeout, args.delay)
             for chunk in chunked_hosts]
 
     with Pool(cpu_count() * 2) as p:
         p.starmap(check_pings, data)
 
 
-def check_pings(prefix, hosts, count, timeout):
-    values = pings(hosts, count, timeout)
+def check_pings(prefix, hosts, count, timeout, delay):
+    values = pings(hosts, count, timeout, delay)
 
     timestamp = str(int(time.time()))
 
     for data in values:
-        send(prefix, data, timestamp)
+        print_ping(prefix, data, timestamp)
     
 
-def pings(hosts, count, timeout):
-    hosts_string = " ".join(hosts)
-    # -p calculates the time fping waits between single ping probes
+def pings(hosts, count, timeout, delay):
+    hosts_string = ' '.join(hosts)
     # with 20 probes and 1800 milliseconds in between it takes roughly 1 minute
-    # if you use 30 probes the -p time should goe down, for 10 up
+    # the default value for delay is 1800
     cmd = 'fping -B1 -q -C {} -p {} -t {} {}'
-    cmd = cmd.format(count, (20/count) * 1800, timeout, hosts_string)
+    cmd = cmd.format(count, (20/count) * delay, timeout, hosts_string)
 
     # example.com : 105.94 - 104.78
     # Showing times for each ping. A ping timeout will be shown as '-'.
@@ -80,14 +84,14 @@ def pings(hosts, count, timeout):
         data['max'] = max(pings)
         data['min'] = min(pings)
         
-        total = 0
+        total = 0.0
         fails = 0
         for i, ping in enumerate(pings):
             if ping == '-':
                 pings[i] = -1
                 fails += 1
             else:
-                total += float(pings[i])
+                total += float(ping)
 
         data['pings'] = pings
         if (len(pings) <= fails):
@@ -103,14 +107,19 @@ def pings(hosts, count, timeout):
     return values
 
 
-def send(prefix, data, timestamp):
-    template = \
+def print_ping(prefix, data, timestamp):
+    template = (
         str(prefix) + '.' + data['dest'] + '.{} {} ' + timestamp
+    )
 
-    for num in range(len(data['pings'])):
-        print(template.format('ping' + str(num + 1), data['pings'][num]))
+    for num, ping in enumerate(data['pings'], 1):
+        print(template.format('ping' + str(num), ping))
 
     print(template.format('fails', data['fails']))
+
+    if len(data['pings']) == 0:
+        raise Exception('something went horrible wrong - check your fping -')
+
     print(template.format('fails/1', data['fails'] / len(data['pings'])))
 
     print(template.format('min', data['min']))
