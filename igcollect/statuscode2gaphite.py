@@ -18,6 +18,12 @@ def parse_args():
     parser.add_argument('-x', '--position', type=int, default=9,
                         help='were to search for the code in the log file '
                              '(default= 9 nginx access.log)')
+    parser.add_argument('-t', '--time', type=int, default=1,
+                        choices=range(1, 5),
+                        help='the interval in (full)minutes the script runs.'
+                             'has to be the same time as the corresponding '
+                             'cronjob! '
+                             '(default= 1)')
     parser.add_argument('-p', '--prefix',
                         default='servers.{}.software.{}'.format(
                             socket.gethostname().replace('.', '_'),
@@ -47,7 +53,7 @@ def main():
 
     errors = {}
 
-    for i in range(0, 60 * 5):
+    for i in range(0, 60 * args.time):
         temp_search_time = (search_time - datetime.timedelta(
             seconds=i)).strftime('%d/%b/%Y:%H:%M:%S')
 
