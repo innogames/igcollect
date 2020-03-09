@@ -17,6 +17,7 @@ import socket
 
 from multiprocessing import Pool
 from os import cpu_count
+from statistics import stdev
 
 
 def parse_args():
@@ -24,7 +25,7 @@ def parse_args():
         description='Ping collector script for Graphite ')
     parser.add_argument('hosts', nargs='+',
                         help='the hosts to ping')
-    parser.add_argument('-c', '--count', type=int, default=20, 
+    parser.add_argument('-c', '--count', type=int, default=20,
                         choices=range(1,60),
                         help='how many times the script will try to ping '
                              '(number has to be bigger '
@@ -34,13 +35,14 @@ def parse_args():
                             socket.gethostname().replace('.', '_')),
                         help='the path to the value in Graphite '
                              '(default= servers.(hostname).system.ping)')
-    parser.add_argument('-t', '--timeout', type=int, default=300,
-                        help='time in milliseconds '
-                             'till the timeout is retched (default= 300)')
+    parser.add_argument('-t', '--timeout', type=int, default=500,
+                        help='Initial target timeout in milliseconds. '
+                             'the amount of time that program '
+                             'waits for a response (default= 500)')
     parser.add_argument('-d', '--delay', type=int, default=1800,
                         choices=range(0,5000),
-                        help='time to wait between a series of pings '
-                             '(default= 1800)')
+                        help='time to wait between a series of pings in '
+                             'milliseconds (default= 1800 for 20 pings)')
     return parser.parse_args()
 
 
@@ -64,15 +66,15 @@ def check_pings(prefix, hosts, count, timeout, delay):
 
     for data in values:
         print_ping(prefix, data, timestamp)
-    
+
 
 def pings(hosts, count, timeout, delay):
     hosts_string = ' '.join(hosts)
     # with 20 probes and 1800 milliseconds in between it takes roughly 1 minute
     # the default value for delay is 1800
     cmd = 'fping -B1 -q -C {} -p {} -t {} {}'
-    cmd = cmd.format(count, (20/count) * delay, timeout, hosts_string)
-
+    cmd = cmd.format(count, delay, timeout, hosts_string)
+    # output:
     # example.com : 105.94 - 104.78
     # Showing times for each ping. A ping timeout will be shown as '-'.
     output = subprocess.getoutput(cmd).split('\n')
@@ -84,17 +86,19 @@ def pings(hosts, count, timeout, delay):
         data['dest'] = parts[0].strip(' ').replace('.', '_')
         pings = parts[1].split()
 
-        data['max'] = max(pings)
-        data['min'] = min(pings)
-        
         total = 0.0
         fails = 0
         for i, ping in enumerate(pings):
             if ping == '-':
-                pings[i] = -1
+                pings[i] = '-1'
                 fails += 1
             else:
                 total += float(ping)
+
+        pings = list(map(float, pings))
+
+        data['max'] = max(pings)
+        data['min'] = min(pings)
 
         data['pings'] = pings
         if (len(pings) <= fails):
@@ -102,8 +106,10 @@ def pings(hosts, count, timeout, delay):
         else:
             avg = total / (len(pings) - fails)
             data['avg'] = avg
-            
+
         data['fails'] = fails
+
+        data['std'] = stdev(pings)
 
         values.append(data)
 
@@ -121,10 +127,11 @@ def print_ping(prefix, data, timestamp):
     print(template.format('fails', data['fails']))
 
     if len(data['pings']) == 0:
-        raise Exception('something went horrible wrong - check your fping -')
+        raise Exception('something went horrible wrong: check your fping')
 
     print(template.format('fails/1', data['fails'] / len(data['pings'])))
 
+    print(template.format('std', data['std']))
     print(template.format('min', data['min']))
     print(template.format('max', data['max']))
     print(template.format('avg', data['avg']))
