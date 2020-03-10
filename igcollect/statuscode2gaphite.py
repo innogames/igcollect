@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+
+"""igcollect - statuscode2graphite
+Copyright (c) 2020 InnoGames GmbH
+"""
+
+# This script is used to collect statuscodes out of the logs of nginx and
+# similar services
+
 import argparse
 import datetime
 import time
@@ -98,8 +107,8 @@ def main():
 
     template = args.prefix + '{}.{} {} {}'
 
-    for key in codes.keys():
-        print(template.format('.status_codes', key, codes[key], prob_time))
+    for code in codes.keys():
+        print(template.format('.status_codes', code, codes[code], prob_time))
 
     print(template.format('', 'requests', total, prob_time))
 
