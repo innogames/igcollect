@@ -13,7 +13,6 @@ Copyright (c) 2020 InnoGames GmbH
 import argparse
 import subprocess
 import time
-import socket
 
 from multiprocessing import Pool
 from os import cpu_count
@@ -22,6 +21,7 @@ from statistics import stdev
 
 def parse_args():
     parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description='Ping collector script for Graphite ')
     parser.add_argument('hosts', nargs='+',
                         help='the hosts to ping')
@@ -29,20 +29,18 @@ def parse_args():
                         choices=range(1,60),
                         help='how many times the script will try to ping '
                              '(number has to be bigger '
-                             'than 1 and smaller than 60) (default= 20)')
+                             'than 1 and smaller than 60)')
     parser.add_argument('-p', '--prefix',
-                        default='servers.{}.system.ping'.format(
-                            socket.gethostname().replace('.', '_')),
-                        help='the path to the value in Graphite '
-                             '(default= servers.(hostname).system.ping)')
+                        default='ping',
+                        help='the path to the value in Graphite ')
     parser.add_argument('-t', '--timeout', type=int, default=500,
                         help='Initial target timeout in milliseconds. '
                              'the amount of time that program '
-                             'waits for a response (default= 500)')
+                             'waits for a response')
     parser.add_argument('-d', '--delay', type=int, default=1800,
                         choices=range(0,5000),
                         help='time to wait between a series of pings in '
-                             'milliseconds (default= 1800 for 20 pings)')
+                             'milliseconds')
     return parser.parse_args()
 
 
@@ -70,8 +68,6 @@ def check_pings(prefix, hosts, count, timeout, delay):
 
 def pings(hosts, count, timeout, delay):
     hosts_string = ' '.join(hosts)
-    # with 20 probes and 1800 milliseconds in between it takes roughly 1 minute
-    # the default value for delay is 1800
     cmd = 'fping -B1 -q -C {} -p {} -t {} {}'
     cmd = cmd.format(count, delay, timeout, hosts_string)
     # output:
