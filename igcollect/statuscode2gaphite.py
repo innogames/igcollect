@@ -103,8 +103,6 @@ def main():
 
     codes, total = count_uniq_statuscodes(log_for_period, args.position)
 
-    print(log_for_period)
-
     template = args.prefix + '{}.{} {} {}'
 
     for code in codes.keys():
