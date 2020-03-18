@@ -2,13 +2,13 @@
 
 """igcollect - Latency collection
 Copyright (c) 2020 InnoGames GmbH
+
+This script is used to collect ping data to evaluate availability and latency
+of our network and make it easy to create a Graphite Dashboard
+
+Please note that the package fping has to be installed on your Linux server!
+
 """
-
-# This script is used to collect ping data to evaluate availability and latency
-# of our network and make it easy to create a Graphite Dashboard
-#
-# Please note that the package fping has to be installed on your Linux server!
-
 
 import argparse
 import subprocess
@@ -20,6 +20,13 @@ from statistics import stdev
 
 
 def parse_args():
+    """ collects parameters to know where and how to ping
+
+     Returns:
+         args: the args given to argparse
+
+    """
+
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description='Ping collector script for Graphite ')
@@ -45,6 +52,8 @@ def parse_args():
 
 
 def main():
+    """ main function to control Multitasking the collection of the pings """
+
     args = parse_args()
 
     chunked_hosts = [args.hosts[i:i + 10]
@@ -58,6 +67,17 @@ def main():
 
 
 def check_pings(prefix, hosts, count, timeout, delay):
+    """ checks the pings and prints them
+
+        Parameters:
+            prefix (str): were the script will put the data in graphite
+            hosts (list(str)):  all the hosts that get pinged
+            count (int): how many times a individual host get pinged
+            timeout (int): the time till the timeout of fping
+            delay (int): time to wait between a series of pings
+
+    """
+
     values = pings(hosts, count, timeout, delay)
 
     timestamp = str(int(time.time()))
@@ -67,6 +87,18 @@ def check_pings(prefix, hosts, count, timeout, delay):
 
 
 def pings(hosts, count, timeout, delay):
+    """ pings the host and calculates all data needed
+
+        Parameters:
+            hosts (list(str): all the hosts that get pinged
+            count (int): how many times a individual host get pinged
+            timeout (int): the time till the timeout of fping
+            delay (int): time to wait between a series of pings
+
+        Returns:
+            values (list(dict(float))): all data gathered for all pinged hosts
+    """
+
     hosts_string = ' '.join(hosts)
     cmd = 'fping -B1 -q -C {} -p {} -t {} {}'
     cmd = cmd.format(count, delay, timeout, hosts_string)
@@ -86,12 +118,11 @@ def pings(hosts, count, timeout, delay):
         fails = 0
         for i, ping in enumerate(pings):
             if ping == '-':
-                pings[i] = '-1'
+                pings[i] = -1.0
                 fails += 1
             else:
+                pings[i] = float(ping)
                 total += float(ping)
-
-        pings = list(map(float, pings))
 
         data['max'] = max(pings)
         data['min'] = min(pings)
@@ -113,24 +144,35 @@ def pings(hosts, count, timeout, delay):
 
 
 def print_ping(prefix, data, timestamp):
+    """ prints the data in a format we can collect
+
+        Parameters:
+            prefix (str): were the script will put the data in graphite
+            data (dict(floar)): the data gathered (pings, min, may, avg, std)
+            timestamp (str): the timestamp as a number
+
+    """
+
+    pings = data['pings']
+
     template = (
-        str(prefix) + '.' + data['dest'] + '.{} {} ' + timestamp
+        prefix + '.' + data['dest'] + '.{} {} ' + timestamp
     )
 
-    for num, ping in enumerate(data['pings'], 1):
+    for num, ping in enumerate(pings, 1):
         print(template.format('ping' + str(num), ping))
 
     print(template.format('fails', data['fails']))
 
-    if len(data['pings']) == 0:
-        raise Exception('something went horrible wrong: check your fping')
+    if len(pings):
+        # If the length is 0 we ignore the entries
 
-    print(template.format('fails/1', data['fails'] / len(data['pings'])))
+        print(template.format('fails/1', data['fails'] / len(pings)))
 
-    print(template.format('std', data['std']))
-    print(template.format('min', data['min']))
-    print(template.format('max', data['max']))
-    print(template.format('avg', data['avg']))
+        print(template.format('std', data['std']))
+        print(template.format('min', data['min']))
+        print(template.format('max', data['max']))
+        print(template.format('avg', data['avg']))
 
 
 if __name__ == '__main__':
