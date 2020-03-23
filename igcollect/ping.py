@@ -70,7 +70,7 @@ def check_pings(prefix, hosts, count, timeout, delay):
     """ checks the pings and prints them
 
         Parameters:
-            prefix (str): were the script will put the data in graphite
+            prefix (str): the prefix for the output for graphite
             hosts (list(str)):  all the hosts that get pinged
             count (int): how many times a individual host get pinged
             timeout (int): the time till the timeout of fping
@@ -148,7 +148,7 @@ def print_ping(prefix, data, timestamp):
 
         Parameters:
             prefix (str): were the script will put the data in graphite
-            data (dict(floar)): the data gathered (pings, min, may, avg, std)
+            data (dict(floar)): the data gathered (pings, min, max, avg, std)
             timestamp (str): the timestamp as a number
 
     """
@@ -164,7 +164,7 @@ def print_ping(prefix, data, timestamp):
 
     print(template.format('fails', data['fails']))
 
-    if len(pings):
+    if pings:
         # If the length is 0 we ignore the entries
 
         print(template.format('fails/1', data['fails'] / len(pings)))
