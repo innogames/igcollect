@@ -10,7 +10,6 @@ Copyright (c) 2020 InnoGames GmbH
 import argparse
 import datetime
 import time
-import socket
 
 from collections import Counter
 
@@ -21,30 +20,23 @@ def parse_args():
         description='Script to collect statuscodes from nginx')
     parser.add_argument('logfile',
                         help='path to logfile')
-    parser.add_argument('-s', '--software', default='nginx',
-                        help='which tool is using it ')
     parser.add_argument('-t', '--time', type=int, default=3,
                         help='where to search for the time in the log file ')
     parser.add_argument('-x', '--position', type=int, default=8,
                         help='where to search for the code in the log file ')
     parser.add_argument('-p', '--prefix',
-                        default='servers.{}.software.{}'.format(
-                            socket.gethostname().replace('.', '_'),
-                            parser.parse_args().software),
+                        default='nginx',
                         help='the path to the value in Graphite ')
     return parser.parse_args()
 
 
 def get_position(position, entry):
-    return entry[position]
+    return entry.split(' ')[position]
 
 
-def get_lines(path):
+def get_log(path):
     log_file = open(path)
-    log = []
-    for line in log_file:
-        log.append(line.split(' '))
-    return log
+    return log_file
 
 
 def count_uniq_statuscodes(log, position):
@@ -62,6 +54,7 @@ def add_seconds_to_time(time, seconds):
 
 
 def find_row(log, timedate_at_start, seconds_to_add, time_position):
+    log.seek(0)
     for number_of_entry, entry in enumerate(log):
         search_time = add_seconds_to_time(timedate_at_start, seconds_to_add)
         if search_time in get_position(time_position, entry):
@@ -84,12 +77,24 @@ def get_log_for_period(log, timedate_at_start, period_in_sec, time_position):
     stop = find_row(log, timedate_at_start, 1, time_position) - 1
     for i in range(10):
         stop = find_row(log, timedate_at_start, 1, time_position)
-        if start != -1:
+        if stop != -1:
             stop -= 1
             break
 
     # return everything in this period:
-    return log[start:stop]
+    log_for_period = []
+    if stop == -1:
+        log.seek(0)
+        for line, entry in enumerate(log):
+            if line >= start:
+                log_for_period.append(entry.split(' '))
+    else:
+        log.seek(0)
+        for line, entry in enumerate(log):
+            if line >= start and line <= stop:
+                log_for_period.append(entry.split(' '))
+
+    return log_for_period
 
 
 def main():
@@ -97,7 +102,8 @@ def main():
     prob_time = int(time.time())
     search_time = datetime.datetime.utcnow()
 
-    log = get_lines(args.logfile)
+
+    log = get_log(args.logfile)
 
     log_for_period = get_log_for_period(log, search_time, 60, args.time)
 
@@ -113,3 +119,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
