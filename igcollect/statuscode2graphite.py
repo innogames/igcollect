@@ -102,7 +102,6 @@ def main():
     prob_time = int(time.time())
     search_time = datetime.datetime.utcnow()
 
-
     log = get_log(args.logfile)
 
     log_for_period = get_log_for_period(log, search_time, 60, args.time)
@@ -119,4 +118,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
