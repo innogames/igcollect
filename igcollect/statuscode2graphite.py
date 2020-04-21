@@ -30,36 +30,28 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_position(position, entry):
-    return entry.split(' ')[position]
+def main():
+    args = parse_args()
+    prob_time = int(time.time())
+    search_time = datetime.datetime.utcnow()
+
+    log = get_log(args.logfile)
+
+    log_for_period = get_log_for_period(log, search_time, 60, args.time)
+
+    codes, total = count_uniq_statuscodes(log_for_period, args.position)
+
+    template = args.prefix + '{}.{} {} {}'
+
+    for code in codes.keys():
+        print(template.format('.status_codes', code, codes[code], prob_time))
+
+    print(template.format('', 'requests', total, prob_time))
 
 
 def get_log(path):
     log_file = open(path)
     return log_file
-
-
-def count_uniq_statuscodes(log, position):
-    statuscodes = []
-    for entry in log:
-        statuscodes.append(entry[position])
-    statuscodes_sorted = dict(Counter(statuscodes))
-
-    return statuscodes_sorted, len(statuscodes)
-
-
-def add_seconds_to_time(time, seconds):
-    new_time = time + datetime.timedelta(seconds=seconds)
-    return new_time.strftime('%d/%b/%Y:%H:%M:%S')
-
-
-def find_row(log, timedate_at_start, seconds_to_add, time_position):
-    log.seek(0)
-    for number_of_entry, entry in enumerate(log):
-        search_time = add_seconds_to_time(timedate_at_start, seconds_to_add)
-        if search_time in get_position(time_position, entry):
-            return number_of_entry
-    return -1
 
 
 def get_log_for_period(log, timedate_at_start, period_in_sec, time_position):
@@ -97,23 +89,31 @@ def get_log_for_period(log, timedate_at_start, period_in_sec, time_position):
     return log_for_period
 
 
-def main():
-    args = parse_args()
-    prob_time = int(time.time())
-    search_time = datetime.datetime.utcnow()
+def count_uniq_statuscodes(log, position):
+    statuscodes = []
+    for entry in log:
+        statuscodes.append(entry[position])
+    statuscodes_sorted = dict(Counter(statuscodes))
 
-    log = get_log(args.logfile)
+    return statuscodes_sorted, len(statuscodes)
 
-    log_for_period = get_log_for_period(log, search_time, 60, args.time)
 
-    codes, total = count_uniq_statuscodes(log_for_period, args.position)
+def get_position(position, entry):
+    return entry.split(' ')[position]
 
-    template = args.prefix + '{}.{} {} {}'
 
-    for code in codes.keys():
-        print(template.format('.status_codes', code, codes[code], prob_time))
+def add_seconds_to_time(time, seconds):
+    new_time = time + datetime.timedelta(seconds=seconds)
+    return new_time.strftime('%d/%b/%Y:%H:%M:%S')
 
-    print(template.format('', 'requests', total, prob_time))
+
+def find_row(log, timedate_at_start, seconds_to_add, time_position):
+    log.seek(0)
+    for number_of_entry, entry in enumerate(log):
+        search_time = add_seconds_to_time(timedate_at_start, seconds_to_add)
+        if search_time in get_position(time_position, entry):
+            return number_of_entry
+    return -1
 
 
 if __name__ == '__main__':
