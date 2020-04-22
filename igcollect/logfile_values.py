@@ -41,7 +41,7 @@ class Metric:
         parts += [None] * (4 - len(parts))
         self.name, column, function, period = parts
         if period:
-            pattern = re.compile('^\d+[A-Za-z]{1,3}$')
+            pattern = re.compile(r'^\d+[A-Za-z]{1,3}$')
             if not pattern.match(period):
                 raise ArgumentTypeError('Period must have number and unit')
 
@@ -224,7 +224,7 @@ def read_logfile_reverse(filename,
                 # if the previous chunk starts right from the beginning of line
                 # do not concact the segment to the last line of new chunk
                 # instead, yield the segment first
-                if buffer[-1] is not '\n':
+                if buffer[-1] != '\n':
                     lines[-1] += segment
                 else:
                     yield get_metrics_values(
@@ -238,10 +238,12 @@ def read_logfile_reverse(filename,
                     if global_index == 1:
                         get_metrics_last_value(lines[index], metrics)
                     yield get_metrics_values(lines[index], metrics,
-                                             time_format, columns_num, time_column)
+                                             time_format, columns_num,
+                                             time_column)
 
     if segment is not None:
-        yield get_metrics_values(segment, metrics, time_format, columns_num, time_column)
+        yield get_metrics_values(segment, metrics, time_format,
+                                 columns_num, time_column)
 
 
 def convert_to_timestamp(time_str, time_format):
@@ -311,6 +313,7 @@ def main():  # NOQA: C901
                 print(template.format(metric.name + '.' + str(k), v))
         else:
             print(template.format(metric.name, metric.get_metric_value()))
+
 
 if __name__ == '__main__':
     main()
