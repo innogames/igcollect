@@ -23,7 +23,7 @@ import time
 import os
 import gzip
 import logging
-from datetime import datetime, timezone
+import datetime
 
 from os.path import exists
 from argparse import ArgumentParser, ArgumentTypeError
@@ -50,7 +50,8 @@ class Metric:
         self.period = period
         self.values = []  # Container for metric values
         self.last_value = 0
-        self.now = int(datetime.now(timezone.utc).timestamp())
+        self.now = int(datetime.datetime.now(datetime.timezone.utc)
+                       .timestamp())
 
     def get_timeshift(self):
         if self.period:
@@ -258,7 +259,7 @@ def convert_to_timestamp(time_str, time_format):
         if time_format.endswith('z') and time_str[-3] == ':':
             time_str = ''.join(time_str.rsplit(':', 1))
 
-        dt = datetime.strptime(time_str, time_format).utctimetuple()
+        dt = datetime.datetime.strptime(time_str, time_format).utctimetuple()
         timestamp = time.mktime(dt)
     except ValueError:
         timestamp = int(time_str)
