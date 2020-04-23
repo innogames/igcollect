@@ -19,7 +19,6 @@ Copyright (c) 2019 InnoGames GmbH
 """
 
 import re
-import time
 import os
 import gzip
 import logging
@@ -268,8 +267,8 @@ def convert_to_timestamp(time_str, time_format):
         if time_format.endswith('z') and time_str[-3] == ':':
             time_str = ''.join(time_str.rsplit(':', 1))
 
-        dt = datetime.datetime.strptime(time_str, time_format).timetuple()
-        timestamp = time.mktime(dt)
+        timestamp = datetime.datetime.strptime(time_str,
+                                               time_format).timestamp()
     except ValueError:
         timestamp = int(time_str)
     return int(timestamp)
