@@ -259,7 +259,7 @@ def convert_to_timestamp(time_str, time_format):
         if time_format.endswith('z') and time_str[-3] == ':':
             time_str = ''.join(time_str.rsplit(':', 1))
 
-        dt = datetime.datetime.strptime(time_str, time_format).utctimetuple()
+        dt = datetime.datetime.strptime(time_str, time_format).timetuple()
         timestamp = time.mktime(dt)
     except ValueError:
         timestamp = int(time_str)
