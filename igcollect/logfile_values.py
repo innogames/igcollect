@@ -161,7 +161,11 @@ def parse_args():
     parser.add_argument('--columns-num', default='0', type=int)
     parser.add_argument('--metric', type=Metric, nargs='+')
     parser.add_argument('--time-column', default='0', type=int)
-    parser.add_argument('--time-format', default='%Y-%m-%dT%H:%M:%S%z')
+    parser.add_argument(
+        '--time-format', default='%Y-%m-%dT%H:%M:%S%z',
+        help='If timezone is not specified, time string is treated as '
+        'local time',
+    )
     parser.add_argument('--arch', action='store_true')
     parser.add_argument('--debug', '-d', action='store_true')
     return parser.parse_args()
@@ -248,6 +252,11 @@ def read_logfile_reverse(filename,
 
 
 def convert_to_timestamp(time_str, time_format):
+    """
+    Disclamer about timezone part:
+        if time_format doesn't specify timezone position, time tuple is treated
+        as local
+    """
     try:
         # Python cannot parse ISO8601 dates with suffix Z for UTC which is a
         # valid representation so we need to help it in advance.
@@ -259,7 +268,7 @@ def convert_to_timestamp(time_str, time_format):
         if time_format.endswith('z') and time_str[-3] == ':':
             time_str = ''.join(time_str.rsplit(':', 1))
 
-        dt = datetime.datetime.strptime(time_str, time_format).utctimetuple()
+        dt = datetime.datetime.strptime(time_str, time_format).timetuple()
         timestamp = time.mktime(dt)
     except ValueError:
         timestamp = int(time_str)
