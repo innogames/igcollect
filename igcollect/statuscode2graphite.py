@@ -131,9 +131,9 @@ def count_uniq_statuscodes(log, position):
     statuscodes = []
     for entry in log:
         statuscodes.append(entry[position])
-    statuscodes_sorted = Counter(statuscodes)
+    statuscodes_counted = Counter(statuscodes)
 
-    return statuscodes_sorted, len(statuscodes)
+    return statuscodes_counted, len(statuscodes)
 
 
 def get_position(position, entry):
