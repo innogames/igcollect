@@ -26,7 +26,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description='Script to collect statuscodes from nginx')
-    parser.add_argument('logfile',
+    parser.add_argument('--logfile', default='/var/log/nginx/access.log',
                         help='path to logfile')
     parser.add_argument('-t', '--time', type=int, default=3,
                         help='where to search for the time in the log file ')
