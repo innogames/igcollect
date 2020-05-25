@@ -24,6 +24,7 @@ def main():
         'Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz': 1.85,
         'Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz': 1.75,
         'Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz': 1.8,
+        'Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz': 1.875,
         'AMD EPYC 7502P 32-Core Processor': 2.25
     }
     cpufactor = 1.0
