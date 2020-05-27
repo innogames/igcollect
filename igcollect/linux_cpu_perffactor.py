@@ -19,6 +19,8 @@ def main():
     factors = {
         'Intel(R) Xeon(R) CPU           L5520  @ 2.27GHz': 0.8,
         'Intel(R) Xeon(R) CPU           L5640  @ 2.27GHz': 1.0,
+        'Intel(R) Xeon(R) CPU           X5650  @ 2.67GHz': 1.2,
+        'Intel(R) Xeon(R) CPU E5-2407 0 @ 2.20GHz': 1.4,
         'Intel(R) Xeon(R) CPU E5-2660 0 @ 2.20GHz': 1.6,
         'Intel(R) Xeon(R) CPU E5-2660 v2 @ 2.20GHz': 1.65,
         'Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz': 1.85,
