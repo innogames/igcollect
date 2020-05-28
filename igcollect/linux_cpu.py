@@ -27,7 +27,7 @@ def main():
         'softirq',
         'steal',
     )
-    cs, totals, uptime, count, intr, ctxt = get_cpustats_dict(header)
+    cs, totals, uptime, amount, intr, ctxt = get_cpustats_dict(header)
 
     for cpu in cs:
         for metric in header:
@@ -39,7 +39,7 @@ def main():
     for value in totals:
         print('{}.{} {} {}'.format(args.prefix, value, totals[value], now))
 
-    print('{}.count {} {}'.format(args.prefix, count, now))
+    print('{}.amount {} {}'.format(args.prefix, amount, now))
     print('{}.uptime {} {}'.format(args.prefix, uptime, now))
     print('{}.intr {} {}'.format(args.prefix, intr, now))
     print('{}.ctxt {} {}'.format(args.prefix, ctxt, now))
@@ -51,7 +51,7 @@ def get_cpustats_dict(header):
     total_dict = {}
     uptime = 0
     cpustats_dict = {}
-    count = 0
+    amount = 0
     keys = ('user', 'nice', 'system', 'idle', 'iowait', 'irq', 'softirq')
 
     with open('/proc/stat', 'r') as fp:
@@ -81,7 +81,7 @@ def get_cpustats_dict(header):
                 ))
 
             elif line.startswith('cpu'):
-                count += 1
+                amount += 1
                 x = line.strip().split()
                 name = x.pop(0).lstrip('cpu')
                 cpustats_dict[name] = {}
@@ -95,7 +95,7 @@ def get_cpustats_dict(header):
                 context_switches = int(line.split(' ', 1)[1])
 
     return (
-        cpustats_dict, total_dict, uptime, count, interrupts, context_switches
+        cpustats_dict, total_dict, uptime, amount, interrupts, context_switches
     )
 
 
