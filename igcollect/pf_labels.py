@@ -16,7 +16,9 @@ POOL_RE = re.compile('(pool_[0-9]+)_([46]).*')
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='network.lbpools')
+    parser.add_argument('--prefix', default='network.lbpools.{}'.format(
+        gethostname().split('.')[0]
+    ))
     return parser.parse_args()
 
 
@@ -33,18 +35,12 @@ def parse_pf_labels():
     with open('/etc/iglb/lbpools.json') as jsonfile:
         known_pools = json.load(jsonfile)
 
-    with open('/var/run/iglb/carp_state.json') as jsonfile:
-        carp_states = json.load(jsonfile)
-
     reverse_pools = {}
     for kpk, kpv in known_pools.items():
         nodes = list(kpv.get('nodes', {}).values())
         if not nodes:
             continue
-        # Send metric only from HWLB which is master for this network.
-        int_network = nodes[0].get('route_network')
-        if carp_states[int_network]['carp_master']:
-            reverse_pools[kpv['pf_name']] = kpk
+        reverse_pools[kpv['pf_name']] = kpk
 
     # Read all lines
     for line in pfctl_result.splitlines():
