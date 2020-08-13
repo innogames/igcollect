@@ -124,6 +124,15 @@ def main():
             for key, value in line.items():
                 print(template.format('bgwriter', key, value))
 
+        # table size
+        for line in execute(conn, (
+                'SELECT relname,'
+                '    pg_total_relation_size(relid)'
+                "FROM pg_catalog.pg_statio_user_tables ORDER BY pg_total_relation_size(relid)"
+                "DESC;"
+        )):
+            print(template.format('table_size', line['relname'], line['pg_total_relation_size']))
+
         # Autovacuum
         for line in execute(conn, ('''
                 SELECT relid::regclass::text as table,
