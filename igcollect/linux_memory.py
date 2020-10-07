@@ -34,7 +34,7 @@ def main():
         'Apps', 'PageTables', 'SwapCached', 'VmallocUsed', 'Slab',
         'Cached', 'Buffers', 'MemFree', 'Swap', 'Committed_AS',
         'Mapped', 'Active', 'Inactive', 'MemTotal', 'SUnreclaim',
-        'SReclaimable', 'KernelStack', 'CommitLimit'
+        'SReclaimable', 'KernelStack', 'CommitLimit', 'Shmem'
     ]
 
     # This metic is only available on a 3.14+ kernel
