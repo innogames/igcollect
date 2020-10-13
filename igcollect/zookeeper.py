@@ -47,7 +47,7 @@ def netcat(hostname: str, port: int, content: str) -> str:
     conn.shutdown(SHUT_WR)
     while True:
         answer = conn.recv(1024)
-        if answer == b'':
+        if not answer:
             break
         data += answer
     conn.close()
