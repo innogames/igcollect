@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """igcollect - Zookeeper
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright (c) 2020 InnoGames GmbH
 """
 
 from argparse import ArgumentParser
@@ -39,19 +39,19 @@ def main():
             print(template.format(key, value))
 
 
-def netcat(hostname, port, content):
-    mntr = ''
+def netcat(hostname: str, port: int, content: str) -> str:
+    data = b''
     conn = socket(AF_INET, SOCK_STREAM)
     conn.connect((hostname, port))
-    conn.sendall(content)
+    conn.sendall(content.encode())
     conn.shutdown(SHUT_WR)
     while True:
-        data = conn.recv(1024)
-        if data == '':
+        answer = conn.recv(1024)
+        if not answer:
             break
-        mntr += data
+        data += answer
     conn.close()
-    return mntr
+    return data.decode()
 
 
 if __name__ == '__main__':
