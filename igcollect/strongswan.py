@@ -4,48 +4,85 @@
 Copyright (c) 2020 InnoGames GmbH
 """
 
-from argparse import ArgumentParser
-from subprocess import check_output
-from time import time
+import binascii
 import re
+import vici
+
+from argparse import ArgumentParser
+from hashlib import pbkdf2_hmac
+from time import time
+
+# Keep metric names consistent with what we have on other systems which probably
+# comes from SNMP. Translate from metrics used by Strongswan.
+METRICS = {
+    'bytesIn': 'bytes-in',
+    'bytesOut': 'bytes-out',
+    'pktsIn': 'packets-in',
+    'pktsOut': 'packets-out',
+}
 
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='strongswan')
+    parser.add_argument(
+        '--prefix', help='Graphite path prefix', default='strongswan',
+    )
+    parser.add_argument(
+        '--salt', help="Hash client names using this salt when it's specified",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+
+    # Get all connections and materialize enumerator into a list for later use.
+    sas = list(vici.Session().list_sas())
+
     template = args.prefix + '.{} {} ' + str(int(time()))
-    print(template.format('clients', count_connected_clients()))
+    print(template.format('clients', len(sas)))
+
+    for client_name, client_data in get_clients_traffic(sas).items():
+        # For privacy we support hashing client login name.
+        if args.salt:
+            client_hash = binascii.hexlify(
+                pbkdf2_hmac(
+                    'sha256', client_name.encode(), args.salt.encode(), 100
+                )
+            ).decode()
+        else:
+            client_hash = client_name
+        for metric in METRICS:
+            print(template.format('clients_traffic.{}.{}'.format(
+                client_hash, metric), client_data[metric]
+            ))
 
 
-def count_connected_clients():
-    # Single connected users looks like this:
+def get_clients_traffic(sas):
+    ret = {}
+    for sa in sas:
+        for connection in sa.values():
+            # Get username of connected client. 
+            user = connection.get('remote-eap-id')
+            # Linux users are connected without "remote-eap-id".
+            if not user:
+                user = connection.get('remote-id')
+            # Let's not crash the whole script if one user can't be identified.
+            if not user:
+                continue
+            user = user.decode()
+            # Strip AD domain name.
+            user = re.sub(r'[A-Z\\]', '', user)
+            # Convert to a valid Graphite metric name.
+            user = user.replace('.', '_')
+            for child_sa in connection['child-sas'].values():
+                if user not in ret:
+                    ret[user] = {x:0 for x in METRICS}
 
-    # ---- 8< ----
-    # vpn_by_id_group_xyz: #974, ESTABLISHED, IKEv2, 4242424242424242_i 4242424242424242_r*
-    #   local  'XXXXXX.example.com' @ XXX.XXX.XXX.XXX[4500]
-    #   remote 'XXX.XXX.XXX.XXX' @ XXX.XXX.XXX.XXX[56128] EAP: 'user.name' [XXX.XXX.XXX.XXX XXX:XXX:XXX::XXX]
-    #   AES_CBC-256/HMAC_SHA1_96/PRF_HMAC_SHA1/MODP_1024
-    #   established 6648s ago, rekeying in 6393s
-    #   vpn_by_id_group_xyz: #2624, reqid 426, INSTALLED, TUNNEL-in-UDP, ESP:AES_CBC-256/HMAC_SHA1_96
-    #     installed 3354s ago, rekeying in 53s, expires in 606s
-    #     in  42424242 (-|0x000675ec), 9577036 bytes, 63405 packets,     2s ago
-    #     out 42424242 (-|0x000675ec), 20466058 bytes, 68523 packets,     2s ago
-    #     local  0.0.0.0/0 ::/0
-    #     remote XXX.XXX.XXX.XXX/32 XXX:XXX:XXX::XXX/128
-    # ---- >8 ----
-
-    # Let's say that the line containing word 'remote' and IP address of the client
-    # identifies a single client.
-    line_re = re.compile(r'^\s+remote .* @')
-
-    output = check_output(['/usr/sbin/swanctl', '--list-sas']).decode()
-    lines = output.splitlines()
-    return sum(1 for l in lines if line_re.match(l))
+                # That's Graphite metric and Strongswan metric
+                for gm, sm in METRICS.items():
+                    ret[user][gm] += int(child_sa[sm].decode())
+    return ret
 
 if __name__ == '__main__':
     main()
