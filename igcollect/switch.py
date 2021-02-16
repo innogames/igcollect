@@ -48,6 +48,7 @@ CPU_OIDS = {
     'force10_mxl': '1.3.6.1.4.1.6027.3.26.1.4.4.1.4.2.1.1',
     'cisco_ios': '1.3.6.1.4.1.9.9.109.1.1.1.1.4.1',
     'netiron_mlx': '1.3.6.1.4.1.1991.1.1.2.11.1.1.5.1.1.1',
+    'cumulus': '1.3.6.1.4.1.2021.10.1.3.1',
 }
 
 COUNTERS = {
@@ -230,6 +231,8 @@ def get_switch_model(snmp):
         return 'cisco_ios'
     elif 'Brocade NetIron MLX' in model:
         return 'netiron_mlx'
+    elif 'Cumulus-Linux' in model:
+        return 'cumulus'
 
     print('Unknown switch model {}'.format(model), file=sys.stderr)
     return None
@@ -300,6 +303,9 @@ def standarize_portname(port_name):
         return port_name.replace('/', '_')
     if re.match('\A(Fa|Gi|Tu)[0-9]+\Z', port_name):
         # Cisco tunnels
+        return port_name
+    if re.match('\A(swp)[0-9]+\Z', port_name):
+        # Cumulus ports
         return port_name
     g = re.match(
         '\A(TenGigabitEthernet|fortyGigE) ([0-9]+/[0-9]+)\Z',
