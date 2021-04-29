@@ -72,7 +72,7 @@ def main():
             [row[0]]
         )
         for value in cur.fetchall():
-            print(template.format('table_size', value[0], value[2]))
+            print(template.format('table_size', '{}.{}'.format(row[0], value[0]), value[2]))
             free += value[1]
     print(template.format('status', 'optimize_freeable', free))
 
