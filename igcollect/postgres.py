@@ -126,7 +126,7 @@ def main():
 
         # table size
         for line in execute(conn, ('''
-                SELECT relname, pg_total_relation_size(c.oid)
+                SELECT c.relname, pg_total_relation_size(c.oid)
                 FROM pg_class c
                 LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
                 WHERE c.relkind IN ('r', 'm') AND n.nspname NOT IN ('pg_catalog', 'information_schema')
