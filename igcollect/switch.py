@@ -48,7 +48,7 @@ CPU_OIDS = {
     'force10_mxl': '1.3.6.1.4.1.6027.3.26.1.4.4.1.4.2.1.1',
     'cisco_ios': '1.3.6.1.4.1.9.9.109.1.1.1.1.4.1',
     'netiron_mlx': '1.3.6.1.4.1.1991.1.1.2.11.1.1.5.1.1.1',
-    'cumulus': '1.3.6.1.4.1.2021.10.1.3.1',
+    'cumulus': '1.3.6.1.4.1.2021.11.11.0',
 }
 
 COUNTERS = {
@@ -223,6 +223,8 @@ def get_switch_model(snmp):
         return 'powerconnect'
     elif 'ProCurve' in model:
         return 'procurve'
+    elif 'Aruba' in model:
+        return 'procurve'
     elif 'ExtremeXOS' in model:
         return'extreme'
     elif 'Dell Networking OS' in model:
@@ -348,6 +350,10 @@ def cpu_stats(prefix, snmp, model):
     """
 
     cpu_usage = get_snmp_value(snmp, CPU_OIDS[model])
+
+    if model == 'cumulus':
+        # The value is percent idle
+        cpu_usage = 100 - cpu_usage
 
     if model == 'powerconnect':
         # SNMP returns such ugly string
