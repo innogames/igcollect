@@ -28,7 +28,13 @@ def parse_memory_info():
         # After multiplying by page size they are not _count anymore
         if name.endswith('_count'):
             name = name.replace('_count', '')
-            memory_info[name] = int(line.value) * pagesize
+            if type(line.value) == bytearray:
+                # py-sysctl lack support for CTLTYPE_U32
+                # https://lists.freebsd.org/pipermail/freebsd-current/2018-July/070344.html
+                value = int.from_bytes(line.value, byteorder='little', signed=False)
+            else:
+                value = line.value
+            memory_info[name] = value * pagesize
 
     return memory_info
 
