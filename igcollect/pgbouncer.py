@@ -58,9 +58,9 @@ def main():
 
     # General statistics per pool
     stats_pools = [
-        'database', 'user', 'cl_active', 'cl_waiting', 'sv_active', 'sv_idle',
-        'sv_used', 'sv_tested', 'sv_login', 'maxwait', 'maxwait_us',
-        'pool_mode',
+        'database', 'user', 'cl_active', 'cl_waiting', 'cl_cancel_req',
+        'sv_active', 'sv_idle', 'sv_used', 'sv_tested', 'sv_login', 'maxwait',
+        'maxwait_us', 'pool_mode',
     ]
     cur.execute('SHOW POOLS')
     for row in cur.fetchall():
