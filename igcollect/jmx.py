@@ -24,7 +24,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    jar_path = dirname(abspath(__file__)) + '/../../share/java/jmxcollect.jar'
+    jar_path = dirname(abspath(__file__)) + '/../../share/java/jmx2graphite.jar'
     thread_prefixes = ','.join(args.thread_prefixes)
 
     if args.user and args.password:
