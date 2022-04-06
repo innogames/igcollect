@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument('--ports', default=[], nargs='+')   # XXX Deprecated
     parser.add_argument('--names', default=[], nargs='+')   # XXX Deprecated
     parser.add_argument('--thread-prefixes', default=[], nargs='+')
+    parser.add_argument('--metric-file', default='/etc/jmx2graphite/metrics')
     return parser.parse_args()
 
 
@@ -59,6 +60,8 @@ def main():
                 port,
                 '--thread-prefixes',
                 thread_prefixes,
+                '--metric-file',
+                args.metric_file,
             ] + auth_list)
             exit_code = max(proc.wait(), exit_code)
     else:
@@ -74,6 +77,8 @@ def main():
             str(args.port),
             '--thread-prefixes',
             thread_prefixes,
+            '--metric-file',
+            args.metric_file,
         ] + auth_list)
         exit_code = proc.wait()
 
