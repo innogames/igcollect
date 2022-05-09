@@ -75,6 +75,15 @@ COUNTERS_IGNORE = {
     },
 }
 
+PORT_REGEXP = {
+    'cisco_ios': re.compile('^(?P<port>(Fa|Gi|Tu)[0-9/]+)$'),
+    'cumulus': re.compile('^(?P<port>swp[0-9]+)$'),
+    'extreme': re.compile('^(?P<port>[0-9]:[0-9]+)$'),
+    'force10_mxl': re.compile('^(TenGigabitEthernet|fortyGigE) (?P<port>[0-9]+/[0-9]+)$'),
+    'netiron_mlx': re.compile('^(?P<port>ethernet[0-9]+/[0-9]+)$'),
+    'powerconnect': re.compile('^(?P<port>(Gi|Te|Po|Trk)[0-9/]+)$'),
+    'procurve': re.compile('^(?P<port>(Trk)?[0-9]+)$'),
+}
 
 
 class SwitchException(Exception):
@@ -263,7 +272,7 @@ def get_monitored_ports(snmp, model):
     }
     for port_idx, port_state in port_states.items():
         if not laggs or port_idx not in laggs.keys():
-            port_name = standarize_portname(port_names[port_idx])
+            port_name = standardize_portname(port_names[port_idx], model)
             if port_name:
                 ret[port_idx] = port_name
 
@@ -283,44 +292,17 @@ def get_laggs(snmp, model):
     return None
 
 
-def standarize_portname(port_name):
+def standardize_portname(port_name, model):
     """ Return a Graphite-compatible port name or None if name
         can't be translated
     """
-
-    if re.match('\A(Po|Trk)[0-9]+\Z', port_name):
-        # Dell or HP LAGG
-        return port_name
-    if re.match('\A[0-9]+\Z', port_name):
-        # HP normal port
-        return port_name
-    if re.match('\A[0-9]:[0-9]+\Z', port_name):
-        # Extreme normal port
-        return port_name.replace(':', '_')
-    if re.match('\A(Gi|Te)[0-9]/[0-9]/[0-9]+\Z', port_name):
-        # Dell normal port
-        return port_name.replace('/', '_')
-    if re.match('\A(Fa|Gi|Tu)[0-9]/[0-9]+\Z', port_name):
-        # Cisco ports
-        return port_name.replace('/', '_')
-    if re.match('\A(Fa|Gi|Tu)[0-9]+\Z', port_name):
-        # Cisco tunnels
-        return port_name
-    if re.match('\A(swp)[0-9]+\Z', port_name):
-        # Cumulus ports
-        return port_name
-    g = re.match(
-        '\A(TenGigabitEthernet|fortyGigE) ([0-9]+/[0-9]+)\Z',
-        port_name
-    )
-    if g:
-        # Force 10 MXL port
-        return g.group(2).replace('/', '_')
-    if re.match('\Aethernet[0-9]+/[0-9]+\Z', port_name):
-        # Netiron ports
-        return port_name.replace('/', '_')
-
-    return None
+    r = PORT_REGEXP[model].match(port_name)
+    if not r:
+        return None
+    g = r.group('port')
+    if not g:
+        return None
+    return g.replace('/', '_').replace(':', '_')
 
 
 def ports_stats(prefix, snmp, ports, model):
@@ -360,6 +342,11 @@ def cpu_stats(prefix, snmp, model):
         #     5 Secs ( 18.74%)    60 Secs ( 17.84%)   300 Secs ( 18.12%)
         m = re.search('60 Secs \( *([0-9]+)[0-9\.]*%\)', cpu_usage)
         cpu_usage = int(m.group(1))
+    elif model == 'cumulus':
+        # The value is percent idle
+        cpu_usage = 100 - cpu_usage
+    else:
+        cpu_usage = int(cpu_usage)
 
     template = prefix + '.cpu {} ' + str(int(time()))
     print(template.format(cpu_usage))
