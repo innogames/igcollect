@@ -249,8 +249,7 @@ def get_switch_model(snmp):
     elif 'EdgeSwitch' in model:
         return 'edgeswitch'
 
-    print('Unknown switch model {}'.format(model), file=sys.stderr)
-    return None
+    raise SwitchException(f'Unknown switch model {model}')
 
 
 def get_monitored_ports(snmp, model):
@@ -350,9 +349,6 @@ def cpu_stats(prefix, snmp, model):
         # SNMP returns such ugly string
         #    5 Sec (  0.00%)    60 Sec (  0.12%)   300 Sec (  0.13%)
         m = re.search('60 Sec \( *([0-9]+)\.[0-9]+%\)', cpu_usage)
-        print(cpu_usage)
-        #m = re.search('(.*)', cpu_usage)
-        #print(m.group(1))
         cpu_usage = int(m.group(1))
     elif model == 'cumulus':
         # The value is percent idle
