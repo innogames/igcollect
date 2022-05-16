@@ -49,6 +49,7 @@ CPU_OIDS = {
     'cisco_ios': '1.3.6.1.4.1.9.9.109.1.1.1.1.4.1',
     'netiron_mlx': '1.3.6.1.4.1.1991.1.1.2.11.1.1.5.1.1.1',
     'cumulus': '1.3.6.1.4.1.2021.11.11.0',
+    'edgeswitch': '.1.3.6.1.4.1.4413.1.1.1.1.4.8.1.3.0',
 }
 
 COUNTERS = {
@@ -83,6 +84,7 @@ PORT_REGEXP = {
     'netiron_mlx': re.compile('^(?P<port>ethernet[0-9]+/[0-9]+)$'),
     'powerconnect': re.compile('^(?P<port>(Gi|Te|Po|Trk)[0-9/]+)$'),
     'procurve': re.compile('^(?P<port>[0-9]+)$'),
+    'edgeswitch': re.compile('^(?P<port>[0-9]+/[0-9]+)'),
 }
 
 
@@ -244,9 +246,10 @@ def get_switch_model(snmp):
         return 'netiron_mlx'
     elif 'Cumulus-Linux' in model:
         return 'cumulus'
+    elif 'EdgeSwitch' in model:
+        return 'edgeswitch'
 
-    print('Unknown switch model {}'.format(model), file=sys.stderr)
-    return None
+    raise SwitchException(f'Unknown switch model {model}')
 
 
 def get_monitored_ports(snmp, model):
@@ -341,6 +344,11 @@ def cpu_stats(prefix, snmp, model):
         # SNMP returns such ugly string
         #     5 Secs ( 18.74%)    60 Secs ( 17.84%)   300 Secs ( 18.12%)
         m = re.search('60 Secs \( *([0-9]+)[0-9\.]*%\)', cpu_usage)
+        cpu_usage = int(m.group(1))
+    if model == 'edgeswitch':
+        # SNMP returns such ugly string
+        #    5 Sec (  0.00%)    60 Sec (  0.12%)   300 Sec (  0.13%)
+        m = re.search('60 Sec \( *([0-9]+)\.[0-9]+%\)', cpu_usage)
         cpu_usage = int(m.group(1))
     elif model == 'cumulus':
         # The value is percent idle
