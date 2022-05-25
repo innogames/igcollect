@@ -256,6 +256,16 @@ def convert_to_timestamp(time_str, time_format):
         if time_format doesn't specify timezone position, time tuple is treated
         as local
     """
+    # When using Java17 we are seeing higher decimal fractions on the dates
+    # that Python isn't able to handle.   We need to make sure that the
+    # decimal fraction part is only 6 digits long.
+    # The regexp replaces a 9 digit number with a 6 digit one
+    # time_str example: '2022-05-25T12:05:15.654320355Z'
+    _time_str = time_str.split('.', 1)
+    if len(_time_str[1]) > 7:
+        _time_str[1] = re.sub(r'^([0-9]{6})[0-9]{3}(Z)?', r'\1\2', _time_str[1])
+        time_str = '.'.join(_time_str)
+
     try:
         # Python cannot parse ISO8601 dates with suffix Z for UTC which is a
         # valid representation so we need to help it in advance.
