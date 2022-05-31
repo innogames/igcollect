@@ -262,7 +262,7 @@ def convert_to_timestamp(time_str, time_format):
     # The regexp replaces a 9 digit number with a 6 digit one
     # time_str example: '2022-05-25T12:05:15.654320355Z'
     _time_str = time_str.split('.', 1)
-    if len(_time_str[1]) > 7:
+    if len(_time_str) > 1 and len(_time_str[1]) > 7:
         _time_str[1] = re.sub(r'^([0-9]{6})[0-9]{3}(Z)?', r'\1\2', _time_str[1])
         time_str = '.'.join(_time_str)
 
