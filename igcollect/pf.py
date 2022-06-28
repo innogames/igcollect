@@ -8,7 +8,9 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from subprocess import check_output
 from time import time
+
 import re
+import sysctl
 
 # pfctl displays stats in a tree-like structure.
 # There is no single like that could denote given counter.
@@ -42,6 +44,12 @@ PF_INFOS = {
     'drop_state_insert': ('Counters', 'state-insert'),
 }
 
+UMA_INFOS = (
+    'pf_frag_entries',
+    'pf_frags',
+    'pf_table_entries',
+    'pf_table_entry_counters',
+)
 
 def parse_args():
     parser = ArgumentParser()
@@ -69,13 +77,22 @@ def parse_pf_info():
                 break
     return pf_info
 
+def parse_pf_memory_info():
+    pf_info={}
+    for uma_info in UMA_INFOS:
+        value = sysctl.filter(f'vm.uma.{uma_info}.stats.current')[0].value
+        pf_info[uma_info] = value
+    return pf_info
 
 def main():
     args = parse_args()
 
     template = args.prefix + '.{} {} ' + str(int(time()))
 
-    for graphite_var, pf_val in parse_pf_info().items():
+    for graphite_var, pf_val in (
+        parse_pf_info().items() |
+        parse_pf_memory_info().items()
+    ):
         print(template.format(graphite_var, pf_val))
 
 
