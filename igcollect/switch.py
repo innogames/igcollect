@@ -6,6 +6,7 @@ This script collects
 * port traffic
 * port errors
 * CPU utilization
+* SFP Digital Optical Monitoring metrics
 
 from a switch via SNMP.
 
@@ -50,6 +51,25 @@ CPU_OIDS = {
     'netiron_mlx': '1.3.6.1.4.1.1991.1.1.2.11.1.1.5.1.1.1',
     'cumulus': '1.3.6.1.4.1.2021.11.11.0',
     'edgeswitch': '.1.3.6.1.4.1.4413.1.1.1.1.4.8.1.3.0',
+}
+
+DOM_OIDS = {
+    'force10_mxl': {
+        'bias_current.0': '1.3.6.1.4.1.6027.3.11.1.3.1.1.18',
+        'bias_current.1': '1.3.6.1.4.1.6027.3.11.1.3.1.1.19',
+        'bias_current.2': '1.3.6.1.4.1.6027.3.11.1.3.1.1.20',
+        'bias_current.3': '1.3.6.1.4.1.6027.3.11.1.3.1.1.21',
+        'rx_power.0': '1.3.6.1.4.1.6027.3.11.1.3.1.1.12',
+        'rx_power.1': '1.3.6.1.4.1.6027.3.11.1.3.1.1.13',
+        'rx_power.2': '1.3.6.1.4.1.6027.3.11.1.3.1.1.14',
+        'rx_power.3': '1.3.6.1.4.1.6027.3.11.1.3.1.1.15',
+        'sfp_voltage': '1.3.6.1.4.1.6027.3.11.1.3.1.1.17',
+        'temperature': '1.3.6.1.4.1.6027.3.11.1.3.1.1.16',
+        'tx_power.0': '1.3.6.1.4.1.6027.3.11.1.3.1.1.8',
+        'tx_power.1': '1.3.6.1.4.1.6027.3.11.1.3.1.1.9',
+        'tx_power.2': '1.3.6.1.4.1.6027.3.11.1.3.1.1.10',
+        'tx_power.3': '1.3.6.1.4.1.6027.3.11.1.3.1.1.11',
+    }
 }
 
 COUNTERS = {
@@ -116,6 +136,11 @@ def main():
     cpu_stats(args.prefix, snmp, model)
     monitored_ports = get_monitored_ports(snmp, model)
     ports_stats(args.prefix, snmp, monitored_ports, model)
+
+    # We check DOM metrics only for switch models that have OIDs added to
+    # the script
+    if model in DOM_OIDS:
+        dom_stats(args.prefix, snmp, monitored_ports, DOM_OIDS[model])
 
 
 def parse_args():
@@ -314,7 +339,7 @@ def ports_stats(prefix, snmp, ports, model):
     """ Print graphite-compatible stats for each port of switch """
 
     for counter, oid in COUNTERS.items():
-        # SNMP is slow that we want need to get current time for each counter.
+        # SNMP is slow that we want to get current time for each counter.
         template = prefix + '.ports.{}.{} {} ' + str(int(time()))
         table = get_snmp_table(snmp, oid)
         table_ignore = []
@@ -328,6 +353,25 @@ def ports_stats(prefix, snmp, ports, model):
                 if port_idx in table_ignore:
                     data -= table_ignore[port_idx]
                 print(template.format(port_name, counter, data))
+
+
+def dom_stats(prefix, snmp, ports, oids):
+    """
+    Print graphite-compatible Digital Optical Monitoring stats for each port
+    of the switch
+    """
+
+    for metric, oid in oids.items():
+        # SNMP is slow, so we want to get current time for each counter.
+        timestamp = int(time())
+        table = get_snmp_table(snmp, oid)
+        for port_idx, port_name in ports.items():
+            if port_idx not in table:
+                continue
+            data = table[port_idx]
+            if not data:
+                continue
+            print(f'{prefix}.ports.{port_name}.{metric} {data} {timestamp}')
 
 
 def cpu_stats(prefix, snmp, model):
