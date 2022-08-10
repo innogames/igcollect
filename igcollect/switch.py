@@ -17,11 +17,11 @@ from time import time
 from pysnmp import proto, error
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.entity.rfc3413.oneliner.cmdgen import (
-        CommunityData,
-        UsmUserData,
-        usmHMACSHAAuthProtocol,
-        usmAesCfb128Protocol,
-        usmDESPrivProtocol,
+    CommunityData,
+    UsmUserData,
+    usmHMACSHAAuthProtocol,
+    usmAesCfb128Protocol,
+    usmDESPrivProtocol,
 )
 import re
 import sys
@@ -80,7 +80,9 @@ PORT_REGEXP = {
     'cisco_ios': re.compile('^(?P<port>(Fa|Gi|Tu)[0-9/]+)$'),
     'cumulus': re.compile('^(?P<port>swp[0-9]+(s[0-9]+)?)$'),
     'extreme': re.compile('^(?P<port>[0-9]:[0-9]+)$'),
-    'force10_mxl': re.compile('^(TenGigabitEthernet|fortyGigE) (?P<port>[0-9]+/[0-9]+)$'),
+    'force10_mxl': re.compile(
+        '^(TenGigabitEthernet|fortyGigE) (?P<port>[0-9]+/[0-9]+)$'
+    ),
     'netiron_mlx': re.compile('^(?P<port>ethernet[0-9]+/[0-9]+)$'),
     'powerconnect': re.compile('^(?P<port>(Gi|Te|Po|Trk)[0-9/]+)$'),
     'procurve': re.compile('^(?P<port>[0-9]+)$'),
@@ -128,9 +130,9 @@ def parse_args():
     parser.add_argument('--auth', help='SNMPv3 authentication key')
     parser.add_argument('--priv', help='SNMPv3 privacy key')
     parser.add_argument(
-            '--priv_proto',
-            help='SNMPv3 privacy protocol: aes (default) or des',
-            default='aes'
+        '--priv_proto',
+        help='SNMPv3 privacy protocol: aes (default) or des',
+        default='aes'
     )
     return parser.parse_args()
 
@@ -237,7 +239,7 @@ def get_switch_model(snmp):
     elif 'Aruba' in model:
         return 'procurve'
     elif 'ExtremeXOS' in model:
-        return'extreme'
+        return 'extreme'
     elif 'Dell Networking OS' in model:
         return 'force10_mxl'
     elif 'Cisco IOS Software' in model:
