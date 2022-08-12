@@ -6,7 +6,7 @@ Copyright (c) 2016 InnoGames GmbH
 
 from __future__ import print_function
 from argparse import ArgumentParser
-from subprocess import check_output
+from subprocess import run
 from time import time
 
 import re
@@ -58,11 +58,10 @@ def parse_args():
 
 
 def parse_pf_info():
-    pf_info_raw = check_output(
+    pf_info_raw = run(
         ['/sbin/pfctl', '-qvsi'],
-        universal_newlines=True,
-        close_fds=False,
-    ).splitlines()
+        capture_output=True, text=True,
+    ).stdout.splitlines()
 
     pf_info = {}
     for pf_info_graphite, (pf_info_section, pf_info_key) in PF_INFOS.items():

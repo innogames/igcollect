@@ -7,12 +7,13 @@ Copyright (c) 2018 InnoGames GmbH
 from __future__ import print_function
 from argparse import ArgumentParser
 from socket import gethostname
-from subprocess import check_output
+from subprocess import run
 import json
 import re
 import time
 
 POOL_RE = re.compile('(pool_[0-9]+)_([46]).*')
+ANCHOR_RE = re.compile('anchor "(pool_[0-9]+_(sg|acl)_IPv[46]_if_[a-z0-9]+)"')
 
 def parse_args():
     parser = ArgumentParser()
@@ -23,12 +24,28 @@ def parse_args():
 
 
 def parse_pf_labels():
-    # Get pfctl result of "show all labels"
-    pfctl_result = check_output(
+    pfctl_result = []
+
+    pfctl_result += run(
         ['/sbin/pfctl', '-q', '-sl'],
-        universal_newlines=True,
-        close_fds=False,
-    )
+        capture_output=True, text=True,
+    ).stdout.splitlines()
+
+    # To obtain labels from a ruleset with anchors it is necessary to dive
+    # into each anchor.
+    pfctl_rules = run(
+        ['/sbin/pfctl', '-q', '-sr'],
+        capture_output=True, text=True,
+    ).stdout.splitlines()
+    for line in pfctl_rules:
+        anchor_re = ANCHOR_RE.match(line)
+        if not anchor_re:
+            continue
+        else:
+            pfctl_result += run(
+                ['/sbin/pfctl', '-q', '-sl', '-a', anchor_re.group(1)],
+                capture_output=True, text=True,
+            ).stdout.splitlines()
 
     label_counters = {}
 
@@ -43,7 +60,7 @@ def parse_pf_labels():
         reverse_pools[kpv['pf_name']] = kpk
 
     # Read all lines
-    for line in pfctl_result.splitlines():
+    for line in pfctl_result:
 
         # Split each line by  ' ', this gives is the label name and values
         line_tab = line.split(' ')
