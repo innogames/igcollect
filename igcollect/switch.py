@@ -6,6 +6,7 @@ This script collects
 * port traffic
 * port errors
 * CPU utilization
+* SFP Digital Optical Monitoring metrics
 
 from a switch via SNMP.
 
@@ -17,11 +18,11 @@ from time import time
 from pysnmp import proto, error
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.entity.rfc3413.oneliner.cmdgen import (
-        CommunityData,
-        UsmUserData,
-        usmHMACSHAAuthProtocol,
-        usmAesCfb128Protocol,
-        usmDESPrivProtocol,
+    CommunityData,
+    UsmUserData,
+    usmHMACSHAAuthProtocol,
+    usmAesCfb128Protocol,
+    usmDESPrivProtocol,
 )
 import re
 import sys
@@ -52,6 +53,25 @@ CPU_OIDS = {
     'edgeswitch': '.1.3.6.1.4.1.4413.1.1.1.1.4.8.1.3.0',
 }
 
+DOM_OIDS = {
+    'force10_mxl': {
+        'bias_current.0': '1.3.6.1.4.1.6027.3.11.1.3.1.1.18',
+        'bias_current.1': '1.3.6.1.4.1.6027.3.11.1.3.1.1.19',
+        'bias_current.2': '1.3.6.1.4.1.6027.3.11.1.3.1.1.20',
+        'bias_current.3': '1.3.6.1.4.1.6027.3.11.1.3.1.1.21',
+        'rx_power.0': '1.3.6.1.4.1.6027.3.11.1.3.1.1.12',
+        'rx_power.1': '1.3.6.1.4.1.6027.3.11.1.3.1.1.13',
+        'rx_power.2': '1.3.6.1.4.1.6027.3.11.1.3.1.1.14',
+        'rx_power.3': '1.3.6.1.4.1.6027.3.11.1.3.1.1.15',
+        'sfp_voltage': '1.3.6.1.4.1.6027.3.11.1.3.1.1.17',
+        'temperature': '1.3.6.1.4.1.6027.3.11.1.3.1.1.16',
+        'tx_power.0': '1.3.6.1.4.1.6027.3.11.1.3.1.1.8',
+        'tx_power.1': '1.3.6.1.4.1.6027.3.11.1.3.1.1.9',
+        'tx_power.2': '1.3.6.1.4.1.6027.3.11.1.3.1.1.10',
+        'tx_power.3': '1.3.6.1.4.1.6027.3.11.1.3.1.1.11',
+    }
+}
+
 COUNTERS = {
     'bytesIn': '1.3.6.1.2.1.31.1.1.1.6',
     'bytesOut': '1.3.6.1.2.1.31.1.1.1.10',
@@ -80,7 +100,9 @@ PORT_REGEXP = {
     'cisco_ios': re.compile('^(?P<port>(Fa|Gi|Tu)[0-9/]+)$'),
     'cumulus': re.compile('^(?P<port>swp[0-9]+(s[0-9]+)?)$'),
     'extreme': re.compile('^(?P<port>[0-9]:[0-9]+)$'),
-    'force10_mxl': re.compile('^(TenGigabitEthernet|fortyGigE) (?P<port>[0-9]+/[0-9]+)$'),
+    'force10_mxl': re.compile(
+        '^(TenGigabitEthernet|fortyGigE) (?P<port>[0-9]+/[0-9]+)$'
+    ),
     'netiron_mlx': re.compile('^(?P<port>ethernet[0-9]+/[0-9]+)$'),
     'powerconnect': re.compile('^(?P<port>(Gi|Te|Po|Trk)[0-9/]+)$'),
     'procurve': re.compile('^(?P<port>[0-9]+)$'),
@@ -115,6 +137,11 @@ def main():
     monitored_ports = get_monitored_ports(snmp, model)
     ports_stats(args.prefix, snmp, monitored_ports, model)
 
+    # We check DOM metrics only for switch models that have OIDs added to
+    # the script
+    if model in DOM_OIDS:
+        dom_stats(args.prefix, snmp, monitored_ports, DOM_OIDS[model])
+
 
 def parse_args():
     parser = ArgumentParser()
@@ -128,9 +155,9 @@ def parse_args():
     parser.add_argument('--auth', help='SNMPv3 authentication key')
     parser.add_argument('--priv', help='SNMPv3 privacy key')
     parser.add_argument(
-            '--priv_proto',
-            help='SNMPv3 privacy protocol: aes (default) or des',
-            default='aes'
+        '--priv_proto',
+        help='SNMPv3 privacy protocol: aes (default) or des',
+        default='aes'
     )
     return parser.parse_args()
 
@@ -237,7 +264,7 @@ def get_switch_model(snmp):
     elif 'Aruba' in model:
         return 'procurve'
     elif 'ExtremeXOS' in model:
-        return'extreme'
+        return 'extreme'
     elif 'Dell Networking OS' in model:
         return 'force10_mxl'
     elif 'Cisco IOS Software' in model:
@@ -312,7 +339,7 @@ def ports_stats(prefix, snmp, ports, model):
     """ Print graphite-compatible stats for each port of switch """
 
     for counter, oid in COUNTERS.items():
-        # SNMP is slow that we want need to get current time for each counter.
+        # SNMP is slow that we want to get current time for each counter.
         template = prefix + '.ports.{}.{} {} ' + str(int(time()))
         table = get_snmp_table(snmp, oid)
         table_ignore = []
@@ -326,6 +353,25 @@ def ports_stats(prefix, snmp, ports, model):
                 if port_idx in table_ignore:
                     data -= table_ignore[port_idx]
                 print(template.format(port_name, counter, data))
+
+
+def dom_stats(prefix, snmp, ports, oids):
+    """
+    Print graphite-compatible Digital Optical Monitoring stats for each port
+    of the switch
+    """
+
+    for metric, oid in oids.items():
+        # SNMP is slow, so we want to get current time for each counter.
+        timestamp = int(time())
+        table = get_snmp_table(snmp, oid)
+        for port_idx, port_name in ports.items():
+            if port_idx not in table:
+                continue
+            data = table[port_idx]
+            if not data:
+                continue
+            print(f'{prefix}.ports.{port_name}.{metric} {data} {timestamp}')
 
 
 def cpu_stats(prefix, snmp, model):
