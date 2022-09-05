@@ -7,13 +7,7 @@ Copyright (c) 2019 InnoGames GmbH
 import base64
 from argparse import ArgumentParser
 from time import time
-
-try:
-    # Try importing the Python3 packages
-    from urllib.request import Request, urlopen
-except ImportError:
-    # On failure, import the Python2
-    from urllib2 import Request, urlopen
+from urllib.request import Request, urlopen
 
 
 def parse_args():
