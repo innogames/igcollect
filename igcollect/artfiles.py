@@ -11,11 +11,9 @@ from time import time
 try:
     # Try importing the Python3 packages
     from urllib.request import Request, urlopen
-    from urllib.parse import urlencode
 except ImportError:
     # On failure, import the Python2
     from urllib2 import Request, urlopen
-    from urllib import urlencode
 
 
 def parse_args():
@@ -70,18 +68,23 @@ def parse_and_print(template, csv):
     elif maxcur == '16A':
         print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='max',
                               value='16.00'))
+    elif maxcur == '32A':
+        print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='max',
+                              value='32.00'))
     elif maxcur == 'redundant':
         print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='max',
                               value='20.00'))
-    if measurement_type == 'ampere':
-        ampere = curval.replace(' A', '')
-        print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='ampere',
-                              value=ampere))
 
+    # only for kwh racks we get the total
     if measurement_type == 'kwh':
         kwh = maxval_watt.replace(' kWh', '')
         print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='kwh',
                               value=kwh))
+
+    # we now always get the current
+    ampere = curval.replace(' A', '')
+    print(template.format(dc=dc, rack=rack, pdu_nr=pdu_nr, unit='ampere',
+                          value=ampere))
 
 
 if __name__ == '__main__':
