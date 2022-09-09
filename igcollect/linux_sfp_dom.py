@@ -45,6 +45,7 @@ SFF_A0_ID_OFFSET = 0x00
 SFF_A0_DOM = 92
 SFF_A0_DOM_PWRT = (1 << 3)
 SFF_A0_DOM_EXTCAL = (1 << 4)
+SFF_A0_DOM_IMPL = (1 << 6)
 
 # From ethtool/sfpdiag.c
 SFF_A2_BASE = 0x100
@@ -479,12 +480,19 @@ class SFF8472Data(SFFData):
     def __init__(self, data, interface):
         # Interfaces without SFP sometimes will return data, but the type
         # will be null.
-        unsupported = data[SFF_A0_ID_OFFSET] == SFF8024_ID_UNKNOWN
+        unknown_id = data[SFF_A0_ID_OFFSET] == SFF8024_ID_UNKNOWN
 
-        if unsupported:
+        if unknown_id:
             raise UnsupportedSFPException(
                 f'{interface}: SFP type {data[SFF8636_ID_OFFSET]} is not '
                 'supported'
+            )
+
+        # Check if SFP supports DOM
+        supports_dom = data[SFF_A0_DOM] & SFF_A0_DOM_IMPL
+        if not supports_dom:
+            raise UnsupportedSFPException(
+                f'{interface}: SFP does not support DOM'
             )
 
         # Check if SFP data is externally calibrated. We don't support it.
