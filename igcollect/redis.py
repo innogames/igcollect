@@ -37,7 +37,6 @@ def main():
     headers = (
         # Clients
         'blocked_clients',
-        'cluster_connections',
         'connected_clients',
 
         # CPU
