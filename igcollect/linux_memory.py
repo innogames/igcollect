@@ -24,8 +24,8 @@ def main():
         meminfo['Buffers'],
         meminfo['Cached'],
         meminfo['Slab'],
-        meminfo['PageTables'],
-        meminfo['SwapCached'],
+        meminfo.get('PageTables', 0),
+        meminfo.get('SwapCached', 0),
     ))
     meminfo['Swap'] = meminfo['SwapTotal'] - meminfo['SwapFree']
 
@@ -43,7 +43,8 @@ def main():
 
     template = args.prefix + '.{} {} ' + str(int(time()))
     for field in used_fields:
-        print(template.format(field, meminfo[field]))
+        if field in meminfo:
+            print(template.format(field, meminfo[field]))
 
 
 def parse_split_file(filename):
