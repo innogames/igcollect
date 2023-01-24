@@ -10,6 +10,7 @@ import vici
 
 from argparse import ArgumentParser
 from hashlib import pbkdf2_hmac
+from ipaddress import ip_address
 from time import time
 
 # Keep metric names consistent with what we have on other systems which probably
@@ -40,7 +41,21 @@ def main():
     sas = list(vici.Session().list_sas())
 
     template = args.prefix + '.{} {} ' + str(int(time()))
+
+    ipv6_clients = 0
+    ipv4_clients = 0
+    for client in sas:
+        # There's just one vpn_id, but since it's a dict, let's iterate.
+        for vpn_id, vpn_data in client.items():
+            remote_host = ip_address(vpn_data["remote-host"].decode())
+            if remote_host.version == 6:
+                ipv6_clients += 1
+            else:
+                ipv4_clients += 1
+
     print(template.format('clients', len(sas)))
+    print(template.format('clients_ipv6', ipv6_clients))
+    print(template.format('clients_ipv4', ipv4_clients))
 
     for client_name, client_data in get_clients_traffic(sas).items():
         # For privacy we support hashing client login name.
