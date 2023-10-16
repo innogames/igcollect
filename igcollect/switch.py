@@ -19,7 +19,7 @@ from pysnmp import error
 import re
 import sys
 
-from snmp import (
+from lib_snmp import (
     get_snmp_connection,
     get_snmp_value,
     get_snmp_table,
