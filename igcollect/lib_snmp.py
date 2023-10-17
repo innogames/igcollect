@@ -2,7 +2,7 @@
 """
 
 
-from pysnmp import proto, error
+from pysnmp import proto
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.entity.rfc3413.oneliner.cmdgen import (
     CommunityData,
@@ -11,14 +11,15 @@ from pysnmp.entity.rfc3413.oneliner.cmdgen import (
     usmAesCfb128Protocol,
     usmDESPrivProtocol,
 )
-import re
-import sys
+
 
 class IgCollectSNMPException(Exception):
     pass
 
+
 # Predefine some variables, it makes this program run a bit faster.
 cmd_gen = cmdgen.CommandGenerator()
+
 
 def get_snmp_connection(args):
     """ Prepare SNMP transport agent.
@@ -35,6 +36,8 @@ def get_snmp_connection(args):
             priv_proto = usmDESPrivProtocol
         if args.priv_proto == 'aes':
             priv_proto = usmAesCfb128Protocol
+        else:
+            raise IgCollectSNMPException(f'Unsupported privacy protocol {args.priv_prot}')
 
         auth_data = UsmUserData(
             args.user, args.auth, args.priv,
@@ -59,8 +62,7 @@ def get_snmp_value(snmp, OID):
         OID,
     )
     if errorIndication:
-        raise IgCollectSNMPException('Unable to get SNMP value: {}'.
-                              format(errorIndication))
+        raise IgCollectSNMPException(f'Unable to get SNMP value: {errorIndication}')
 
     return convert_snmp_type(varBinds)
 
@@ -89,8 +91,8 @@ def get_snmp_table(snmp, OID):
         if not str(varBind[0][0]).startswith(OID):
             break
         if errorIndication:
-            raise IgCollectSNMPException('Unable to get SNMP value: {}'.
-                                  format(errorIndication))
+            raise IgCollectSNMPException(f'Unable to get SNMP value: {errorIndication}')
+
         index = int(str(varBind[0][0][-1:]))
         ret[index] = convert_snmp_type(varBind)
 
@@ -108,3 +110,17 @@ def convert_snmp_type(varBinds):
     ]:
         return int(val)
     return str(val)
+
+
+def add_snmp_arguments(parser):
+    snmp_mode = parser.add_mutually_exclusive_group(required=True)
+    snmp_mode.add_argument('--community', help='SNMP community')
+    snmp_mode.add_argument('--user', help='SNMPv3 user')
+
+    parser.add_argument('--auth', help='SNMPv3 authentication key')
+    parser.add_argument('--priv', help='SNMPv3 privacy key')
+    parser.add_argument(
+        '--priv_proto',
+        help='SNMPv3 privacy protocol: aes (default) or des',
+        default='aes'
+    )

@@ -19,6 +19,7 @@ import re
 import sys
 
 from lib_snmp import (
+    add_snmp_arguments,
     get_snmp_connection,
     get_snmp_value,
     get_snmp_table,
@@ -85,8 +86,8 @@ COUNTERS_IGNORE = {
     'force10_mxl': {
         # This counter is required to distinguish packets discarded due to port
         # being disabled by STP from other types of discarded packets.
-        # Due to nature of couters this will never reach exact 0.
-        # Of course it would be way better to totally ignore counters of ports
+        # Due to nature of counters this will never reach exact 0.
+        # Of course, it would be way better to totally ignore counters of ports
         # blocked by STP but I can't find such information in any MIB.
         'ifInDiscards': '1.3.6.1.4.1.6027.3.27.1.3.1.3',
     },
@@ -140,18 +141,8 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('host', type=str, help='Hostname of a switch')
     parser.add_argument('--prefix', help='Graphite prefix')
+    add_snmp_arguments(parser)
 
-    snmp_mode = parser.add_mutually_exclusive_group(required=True)
-    snmp_mode.add_argument('--community', help='SNMP community')
-    snmp_mode.add_argument('--user', help='SNMPv3 user')
-
-    parser.add_argument('--auth', help='SNMPv3 authentication key')
-    parser.add_argument('--priv', help='SNMPv3 privacy key')
-    parser.add_argument(
-        '--priv_proto',
-        help='SNMPv3 privacy protocol: aes (default) or des',
-        default='aes'
-    )
     return parser.parse_args()
 
 
@@ -188,7 +179,7 @@ def get_monitored_ports(snmp, model):
         - and don't belong to a LAGG
         - or are a configured LAGG
 
-        SNMP works in misterious ways: it is faster to fetch a whole table
+        SNMP works in mysterious ways: it is faster to fetch a whole table
         and then operate in this program than to fetch just a few entries.
     """
 

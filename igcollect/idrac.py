@@ -12,8 +12,8 @@ from time import time
 import sys
 
 from lib_snmp import (
+    add_snmp_arguments,
     get_snmp_connection,
-    get_snmp_value,
     get_snmp_table,
 )
 
@@ -36,7 +36,7 @@ OIDS = {
         # temperatureProbeType is temperatureProbeTypeIsDiscrete, a value is
         # not returned for this attribute.
         'probe_type': '1.3.6.1.4.1.674.10892.5.4.700.20.1.7',
-        'probe_names':'1.3.6.1.4.1.674.10892.5.4.700.20.1.8',
+        'probe_names': '1.3.6.1.4.1.674.10892.5.4.700.20.1.8',
         'probe_readings': '1.3.6.1.4.1.674.10892.5.4.700.20.1.6',
     },
     'current': {
@@ -74,18 +74,8 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('host', type=str, help='Hostname of the iDRAC')
     parser.add_argument('--prefix', help='Graphite prefix')
+    add_snmp_arguments(parser)
 
-    snmp_mode = parser.add_mutually_exclusive_group(required=True)
-    snmp_mode.add_argument('--community', help='SNMP community')
-    snmp_mode.add_argument('--user', help='SNMPv3 user')
-
-    parser.add_argument('--auth', help='SNMPv3 authentication key')
-    parser.add_argument('--priv', help='SNMPv3 privacy key')
-    parser.add_argument(
-        '--priv_proto',
-        help='SNMPv3 privacy protocol: aes (default) or des',
-        default='aes'
-    )
     return parser.parse_args()
 
 
@@ -102,8 +92,10 @@ def main():
     for probe_set, probe_config in OIDS.items():
         if probe_set == 'temperature':
             probe_data = get_temperatures(snmp, probe_config)
-        if probe_set == 'current':
+        elif probe_set == 'current':
             probe_data = get_currents(snmp, probe_config)
+        else:
+            raise Exception(f'Unknown probe {probe_set}')
 
         for probe_name, probe_reading in probe_data.items():
             probe_name = probe_name.replace(' ', '_')
@@ -118,6 +110,7 @@ def get_temperatures(snmp, config):
             ret[probe_data['name']] = probe_data['reading'] * 0.1
         # else skip this probe
     return ret
+
 
 def get_currents(snmp, config):
     ret = {}
