@@ -8,7 +8,6 @@ Copyright © 2023 InnoGames GmbH
 
 from argparse import ArgumentParser
 from time import time
-from pysnmp import error
 
 import sys
 
@@ -17,6 +16,15 @@ from lib_snmp import (
     get_snmp_value,
     get_snmp_table,
 )
+
+OID_CONSTANTS = {
+    'temperatureProbeTypeIsDiscrete': 16,
+    'amperageProbeTypeIsDiscrete': 16,
+    'amperageProbeTypeIsPowerSupplyAmps': 23,
+    'amperageProbeTypeIsPowerSupplyWatts': 24,
+    'amperageProbeTypeIsSystemAmps': 25,
+    'amperageProbeTypeIsSystemWatts': 26,
+}
 
 OIDS = {
     'temperature': {
@@ -27,7 +35,6 @@ OIDS = {
         # probe is reading in tenths of degrees Centigrade. When the value for
         # temperatureProbeType is temperatureProbeTypeIsDiscrete, a value is
         # not returned for this attribute.
-        # temperatureProbeTypeIsDiscrete(16)
         'probe_type': '1.3.6.1.4.1.674.10892.5.4.700.20.1.7',
         'probe_names':'1.3.6.1.4.1.674.10892.5.4.700.20.1.8',
         'probe_readings': '1.3.6.1.4.1.674.10892.5.4.700.20.1.6',
@@ -48,18 +55,13 @@ OIDS = {
         # reading in Milliamps.
         # When the value for amperageProbeType is amperageProbeTypeIsDiscrete,
         # a value is not returned for this attribute.
-        # amperageProbeTypeIsDiscrete(16),
-        # amperageProbeTypeIsPowerSupplyAmps(23),
-        # amperageProbeTypeIsPowerSupplyWatts(24)
-        # amperageProbeTypeIsSystemAmps(25)
-        # amperageProbeTypeIsSystemWatts(26)
         'probe_type': '1.3.6.1.4.1.674.10892.5.4.600.30.1.7',
         'probe_unit_mapping': {
-            16: 'A',
-            23: 'A',
-            24: 'W',
-            25: 'A',
-            26: 'W',
+            OID_CONSTANTS['amperageProbeTypeIsDiscrete']: 'A',
+            OID_CONSTANTS['amperageProbeTypeIsPowerSupplyAmps']: 'A',
+            OID_CONSTANTS['amperageProbeTypeIsPowerSupplyWatts']: 'W',
+            OID_CONSTANTS['amperageProbeTypeIsSystemAmps']: 'A',
+            OID_CONSTANTS['amperageProbeTypeIsSystemWatts']: 'W',
             'default': 'mA',
         },
         'probe_names': '1.3.6.1.4.1.674.10892.5.4.600.30.1.8',
@@ -91,11 +93,7 @@ def main():
     timestamp = int(time())
     args = parse_args()
 
-    try:
-        snmp = get_snmp_connection(args)
-    except error.PySnmpError as e:
-        print(e, file=sys.stderr)
-        return -1
+    snmp = get_snmp_connection(args)
 
     prefix = 'idrac'
     if args.prefix:
@@ -116,7 +114,7 @@ def get_temperatures(snmp, config):
     ret = {}
     probe_units = get_snmp_table(snmp, config['probe_type'])
     for probe_index, probe_data in get_probes_table(snmp, config).items():
-        if probe_units[probe_index] != 16:
+        if probe_units[probe_index] != OID_CONSTANTS['temperatureProbeTypeIsDiscrete']:
             ret[probe_data['name']] = probe_data['reading'] * 0.1
         # else skip this probe
     return ret

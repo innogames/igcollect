@@ -15,7 +15,6 @@ Copyright (c) 2017 InnoGames GmbH
 
 from argparse import ArgumentParser
 from time import time
-from pysnmp import error
 import re
 import sys
 
@@ -23,7 +22,6 @@ from lib_snmp import (
     get_snmp_connection,
     get_snmp_value,
     get_snmp_table,
-    IgCollectSNMPException,
 )
 
 # Predefine some variables, it makes this program run a bit faster.
@@ -116,11 +114,8 @@ def main():
     args = parse_args()
     if not args.prefix:
         args.prefix = 'switches.{}'.format(args.switch)
-    try:
-        snmp = get_snmp_connection(args)
-    except error.PySnmpError as e:
-        print(e, file=sys.stderr)
-        return -1
+
+    snmp = get_snmp_connection(args)
 
     try:
         model = get_switch_model(snmp)
