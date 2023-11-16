@@ -12,7 +12,8 @@ import json
 import re
 import time
 
-POOL_RE = re.compile('(pool_[0-9]+)_([46]).*')
+POOL_RE = re.compile('(pool_[0-9]+)_IPv([46]).*')
+
 
 def parse_args():
     parser = ArgumentParser()
@@ -22,14 +23,25 @@ def parse_args():
     return parser.parse_args()
 
 
-def parse_pf_labels():
-    # Get pfctl result of "show all labels"
-    pfctl_result = check_output(
-        ['/sbin/pfctl', '-q', '-sl'],
-        universal_newlines=True,
-        close_fds=False,
-    )
+def main():
+    args = parse_args()
+    now = str(int(time.time()))
+    anchors = get_anchors()
+    labels = get_pf_labels(anchors)
+    label_counters = parse_pf_labels(labels)
 
+    for label in label_counters.keys():
+        for proto in ('IPv4', 'IPv6'):
+            for metric in ('bytesIn', 'bytesOut', 'pktsIn', 'pktsOut'):
+                print('{}.{}.{}.{} {} {}'.format(
+                    args.prefix,
+                    label, proto, metric,
+                    label_counters[label][proto][metric],
+                    now,
+                ))
+
+
+def parse_pf_labels(labels):
     label_counters = {}
 
     with open('/etc/iglb/lbpools.json') as jsonfile:
@@ -43,8 +55,7 @@ def parse_pf_labels():
         reverse_pools[kpv['pf_name']] = kpk
 
     # Read all lines
-    for line in pfctl_result.splitlines():
-
+    for line in labels:
         # Split each line by  ' ', this gives is the label name and values
         line_tab = line.split(' ')
 
@@ -82,20 +93,29 @@ def parse_pf_labels():
     return label_counters
 
 
-def main():
-    args = parse_args()
-    now = str(int(time.time()))
-    label_counters = parse_pf_labels()
+def get_pf_labels(anchors):
+    lines = []
+    for anchor in anchors:
+        pfctl_result = check_output(
+            ['/sbin/pfctl', '-q', '-sl', '-a', anchor],
+            universal_newlines=True,
+            close_fds=False,
+        )
+        lines += pfctl_result.splitlines()
 
-    for label in label_counters.keys():
-        for proto in ('IPv4', 'IPv6'):
-            for metric in ('bytesIn', 'bytesOut', 'pktsIn', 'pktsOut'):
-                print('{}.{}.{}.{} {} {}'.format(
-                    args.prefix,
-                    label, proto, metric,
-                    label_counters[label][proto][metric],
-                    now,
-                ))
+    return lines
+
+
+def get_anchors():
+    pfctl_result = check_output(
+        ['/sbin/pfctl', '-q', '-sA'],
+        universal_newlines=True,
+        close_fds=False,
+    )
+
+    anchors = [line.strip() for line in pfctl_result.splitlines()]
+
+    return anchors
 
 
 if __name__ == '__main__':
