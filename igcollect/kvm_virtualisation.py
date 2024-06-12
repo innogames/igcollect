@@ -153,15 +153,15 @@ def get_hv_memory_usage(conn, prefix, now, memory_used):
     memory_free = memory_total - memory_used
     print(
         '{}.kvm.memory.total {} {}'
-        .format(prefix, memory_total, now)
+        .format(prefix, memory_total * 1024, now)
     )
     print(
         '{}.kvm.memory.used {} {}'
-        .format(prefix, memory_used, now)
+        .format(prefix, memory_used * 1024, now)
     )
     print(
         '{}.kvm.memory.free {} {}'
-        .format(prefix, memory_free, now)
+        .format(prefix, memory_free * 1024, now)
     )
 
 
@@ -172,15 +172,15 @@ def get_hv_storage_usage(conn, prefix, now):
 
         print(
             '{}.kvm.storage_pool.{}.total {} {}'
-            .format(prefix, name, info[1] // 1024, now)
+            .format(prefix, name, info[1], now)
         )
         print(
             '{}.kvm.storage_pool.{}.used {} {}'
-            .format(prefix, name, info[2] // 1024, now)
+            .format(prefix, name, info[2], now)
         )
         print(
             '{}.kvm.storage_pool.{}.free {} {}'
-            .format(prefix, name, info[3] // 1024, now)
+            .format(prefix, name, info[3], now)
         )
 
 
