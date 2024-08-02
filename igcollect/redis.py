@@ -35,18 +35,30 @@ def main():
 
     template = args.prefix + '.{} {} ' + str(int(time()))
     headers = (
-        'total_connections_received',
-        'total_commands_processed',
-        'keyspace_hits',
-        'keyspace_misses',
-        'used_memory',
+        # Clients
+        'blocked_clients',
+        'connected_clients',
+
+        # CPU
         'used_cpu_sys',
         'used_cpu_user',
         'used_cpu_sys_children',
         'used_cpu_user_children',
+
+        # Memory
+        'mem_fragmentation_ratio',
+        'mem_replication_backlog',
+        'used_memory',
+
+        # Stats
+        'evicted_keys',
+        'keyspace_hits',
+        'keyspace_misses',
+        'total_connections_received',
+        'total_commands_processed',
     )
     for metric in headers:
-        print(template.format(metric, redis_stats[metric]))
+        print(template.format(metric, redis_stats.get(metric))
 
 
 def get_redis_conf(*args):
