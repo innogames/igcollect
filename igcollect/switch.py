@@ -16,7 +16,12 @@ Copyright (c) 2017 InnoGames GmbH
 from argparse import ArgumentParser
 from time import time
 import re
+import os
 import sys
+
+# lib_snmp is part of igcollect
+script_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(script_path)
 
 from lib_snmp import (
     add_snmp_arguments,
