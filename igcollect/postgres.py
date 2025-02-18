@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """igcollect - PostgreSQL
 
-Copyright (c) 2019 InnoGames GmbH
+Copyright (c) 2025 InnoGames GmbH
 """
 
 from argparse import ArgumentParser
@@ -28,6 +28,9 @@ def main():
         isolation_level=ISOLATION_LEVEL_REPEATABLE_READ,
         readonly=True,
     )
+
+    # Get PostgreSQL version, as some statistics are version dependent
+    version = get_postgres_version(conn)
 
     # To be formatted 2 times
     template = '{}.{{}}.{{}} {{}} {}'.format(args.prefix, int(time()))
@@ -138,7 +141,22 @@ def main():
             print(template.format('table_size', line['relname'], line['pg_total_relation_size']))
 
         # Autovacuum
-        for line in execute(conn, ('''
+        if version >= 170000:  # pg17 and above: max_dead_tuples->max_dead_tuple_bytes, num_dead_tuples->num_dead_item_ids
+            vacuum_query = '''
+                SELECT relid::regclass::text as table,
+                    phase,
+                    heap_blks_total,
+                    heap_blks_scanned,
+                    heap_blks_vacuumed,
+                    index_vacuum_count,
+                    max_dead_tuple_bytes,
+                    num_dead_item_ids,
+                    dead_tuple_bytes
+                FROM pg_stat_progress_vacuum
+                WHERE datname = %s
+                '''
+        else:
+            vacuum_query = '''
                 SELECT relid::regclass::text as table,
                     phase,
                     heap_blks_total,
@@ -149,8 +167,9 @@ def main():
                     num_dead_tuples
                 FROM pg_stat_progress_vacuum
                 WHERE datname = %s
-                '''), (args.dbname,)):
+                '''
 
+        for line in execute(conn, vacuum_query, (args.dbname,)):
             postfix = '{}.{}.{}.{}'.format('vacuum',
                                            'tables',
                                            line['table'],
@@ -213,6 +232,11 @@ def main():
                                     )
             print(template.format(postfix, line['hostname'].replace('.', '_'),
                                   line['replay_lag']))
+
+def get_postgres_version(conn) -> int:
+    """Fetch the PostgreSQL version number."""
+    version = execute(conn, "SHOW server_version_num")[0]['server_version_num']
+    return int(version)
 
 
 def execute(conn, query, query_vars=()):
