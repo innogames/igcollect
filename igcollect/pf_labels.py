@@ -12,7 +12,7 @@ import json
 import re
 import time
 
-POOL_RE = re.compile('(pool_[0-9]+)_IPv([46]).*')
+POOL_RE = re.compile("(pool_[0-9]+)_(IP|ip)v([46]).*")
 
 
 def parse_args():
