@@ -58,7 +58,7 @@ def main():
         'total_commands_processed',
     )
     for metric in headers:
-        print(template.format(metric, redis_stats.get(metric))
+        print(template.format(metric, redis_stats.get(metric)))
 
 
 def get_redis_conf(*args):
