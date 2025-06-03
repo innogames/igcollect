@@ -29,6 +29,10 @@ def main():
         readonly=True,
     )
 
+    # Set a lock_timeout of 10s to avoid piling up queries in case something is locked for a longer time
+    with conn.cursor() as cur:
+        cur.execute("SET lock_timeout = 10000;")  # 10 seconds
+
     # Get PostgreSQL version, as some statistics are version dependent
     version = get_postgres_version(conn)
 
