@@ -14,9 +14,9 @@ from psycopg2.extras import RealDictCursor
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--prefix', default='postgres')
-    parser.add_argument('--dbname', default='postgres')
-    parser.add_argument('--extended', action='store_true')
+    parser.add_argument("--prefix", default="postgres")
+    parser.add_argument("--dbname", default="postgres")
+    parser.add_argument("--extended", action="store_true")
     return parser.parse_args()
 
 
@@ -109,12 +109,14 @@ def main():
                 'SELECT * FROM {}'.format(stat_table)
             )):
                 for key, value in line.items():
-                    if (key not in ['schemaname',
-                                    'relname',
-                                    'relid',
-                                    'pid',
-                                    'indexrelname',
-                                    'indexrelid']
+                    if (key not in ["schemaname",
+                                    "relname",
+                                    "relid",
+                                    "pid",
+                                    "indexrelname",
+                                    "indexrelid",
+                                    "last_archived_wal",
+                                    ]
                             and value):
                         postfix = '{}.{}.{}'.format(stat_table,
                                                     line['schemaname'],
@@ -125,6 +127,19 @@ def main():
                                                            line['relname'],
                                                            line['indexrelname'],
                                                            )
+
+                        # convert formatted timestamps to unix timestamps
+                        if key in [
+                            "last_analyze",
+                            "last_autovacuum",
+                            "last_autoanalyze",
+                            "last_seq_scan",
+                            "last_vacuum",
+                            "last_idx_scan",
+                            "last_archived_time",
+                        ]:
+                            value = int(value.timestamp())
+
                         print(template.format(postfix, key, value))
 
         # bgwriter (checkpoints)
@@ -250,5 +265,5 @@ def execute(conn, query, query_vars=()):
         return cursor.fetchall()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
