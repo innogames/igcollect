@@ -65,11 +65,41 @@ class Metric:
                     return int(self.period[:-len(unit)].strip()) * mul
         return 0
 
+    def extract_value_from_field(self, field: str) -> float:
+        """
+        Extract numeric value from field, handling key-value pairs and plain values
+
+        Returns 0.0 if the value cannot be converted to float.
+        """
+        # If it's a key-value pair, extract the value
+        if '=' in field:
+            key, value = field.split('=', 1)
+            # Remove quotes if present
+            value = value.strip('"')
+            try:
+                return float(value)
+            except ValueError:
+                return 0.0
+        else:
+            # Plain value
+            try:
+                return float(field)
+            except ValueError:
+                return 0.0
+
     def estimate_columns_value(self, fields):
-        '''
+        """
         Apply some arithmetic on several columns if needed
-        Warning: Estimates regardless of arithmetics rules
-        '''
+        """
+        # Handle simple column reference first (most common case)
+        if self.column.isdigit():
+            try:
+                field = fields[int(self.column)]
+                return self.extract_value_from_field(field)
+            except (IndexError, ValueError):
+                return 0
+
+        # Handle complex expressions with arithmetic
         arr = [
             s for s in self.column if s.isdigit() or s in ['/', '*', '+', '-']
         ]
@@ -77,16 +107,25 @@ class Metric:
         for index, value in enumerate(arr):
             try:
                 if value.isdigit() and result == 0:
-                    result += float(fields[int(value)])
+                    field = fields[int(value)]
+                    result += self.extract_value_from_field(field)
                 elif value == '/':
-                    result = result / float(fields[int(arr[index + 1])])
+                    field = fields[int(arr[index + 1])]
+                    div_value = self.extract_value_from_field(field)
+                    if div_value != 0:
+                        result = result / div_value
+                    else:
+                        result = 0
                 elif value == '*':
-                    result = result * float(fields[int(arr[index + 1])])
+                    field = fields[int(arr[index + 1])]
+                    result = result * self.extract_value_from_field(field)
                 elif value == '+':
-                    result = result + float(fields[int(arr[index + 1])])
+                    field = fields[int(arr[index + 1])]
+                    result = result + self.extract_value_from_field(field)
                 elif value == '-':
-                    result = result - float(fields[int(arr[index + 1])])
-            except ZeroDivisionError:
+                    field = fields[int(arr[index + 1])]
+                    result = result - self.extract_value_from_field(field)
+            except (IndexError, ValueError):
                 result = 0
         return result
 
@@ -170,12 +209,28 @@ def parse_args():
     return parser.parse_args()
 
 
+def extract_value(field):
+    """
+    Extract value from key-value pair or plain value
+    """
+    if '=' in field:
+        key, value = field.split('=', 1)
+        # Remove quotes if present
+        return value.strip('"')
+    else:
+        return field
+
+
 def get_metrics_values(line, metrics, time_format, columns_num, time_column):
     fields = line.split()
     if columns_num and len(fields) != columns_num:
         return True
 
-    timestamp = convert_to_timestamp(fields[time_column], time_format)
+    # Extract timestamp value from key-value pair if needed
+    timestamp_field = fields[time_column]
+    timestamp_value = extract_value(timestamp_field)
+    
+    timestamp = convert_to_timestamp(timestamp_value, time_format)
     for metric in metrics:
         if timestamp > metric.now - metric.get_timeshift():
             value = metric.estimate_columns_value(fields)
