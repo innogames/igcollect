@@ -71,21 +71,11 @@ class Metric:
 
         Returns 0.0 if the value cannot be converted to float.
         """
-        # If it's a key-value pair, extract the value
-        if '=' in field:
-            key, value = field.split('=', 1)
-            # Remove quotes if present
-            value = value.strip('"')
-            try:
-                return float(value)
-            except ValueError:
-                return 0.0
-        else:
-            # Plain value
-            try:
-                return float(field)
-            except ValueError:
-                return 0.0
+        raw_value = extract_value(field)
+        try:
+            return float(raw_value)
+        except ValueError:
+            return 0.0
 
     def estimate_columns_value(self, fields):
         """
@@ -211,7 +201,13 @@ def parse_args():
 
 def extract_value(field):
     """
-    Extract value from key-value pair or plain value
+    Extract raw value from key-value pair or plain value
+    
+    Args:
+        field: String field that may be in format "key=value" or just "value"
+        
+    Returns:
+        The extracted value as string (with quotes stripped if present)
     """
     if '=' in field:
         key, value = field.split('=', 1)
