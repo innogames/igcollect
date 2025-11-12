@@ -1,21 +1,21 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """igcollect - Redis
 
-Copyright (c) 2018 InnoGames GmbH
+Copyright (c) 2025 InnoGames GmbH
 """
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from subprocess import check_output
 from time import time
 
 
-def parse_args():
+def parse_args() -> Namespace:
     parser = ArgumentParser()
     parser.add_argument('--prefix', default='redis')
     return parser.parse_args()
 
 
-def main():
+def main() -> None:
     args = parse_args()
     cfg = get_redis_conf('requirepass', 'port')
 
@@ -25,15 +25,15 @@ def main():
     if 'port' in cfg:
         cli_command.extend(['-p', cfg['port']])
     cli_command.append('info')
-    redis_info = check_output(cli_command)
+    redis_info = check_output(cli_command, text=True)
 
     redis_stats = {}
-    for x in redis_info.splitlines():
-        if x.find(b':') != -1:
-            key, value = x.split(b':', 1)
-            redis_stats[key.decode('utf-8')] = value.decode('utf-8')
+    for line in redis_info.splitlines():
+        if ':' in line:
+            key, value = line.split(':', 1)
+            redis_stats[key] = value
 
-    template = args.prefix + '.{} {} ' + str(int(time()))
+    timestamp = int(time())
     headers = (
         # Clients
         'blocked_clients',
@@ -58,10 +58,10 @@ def main():
         'total_commands_processed',
     )
     for metric in headers:
-        print(template.format(metric, redis_stats.get(metric)))
+        print(f'{args.prefix}.{metric} {redis_stats.get(metric)} {timestamp}')
 
 
-def get_redis_conf(*args):
+def get_redis_conf(*args) -> dict[str, str]:
     """Get requested parameters from the configuration"""
     with open("/etc/redis/redis.conf") as fd:
         content = fd.read().splitlines()
