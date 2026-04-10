@@ -39,6 +39,7 @@ def main():
     memory = stats['memory_usage']
     print(template.format('memory.used', memory['used_memory']))
     print(template.format('memory.free', memory['free_memory']))
+    print(template.format('memory.wasted', memory['wasted_memory']))
 
     interned = stats['interned_strings_usage']
     print(template.format('interned_strings.used', interned['used_memory']))
