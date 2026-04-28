@@ -327,7 +327,6 @@ def convert_to_timestamp(time_str, time_format):
         # with a colon separated e.g. +01:00 this needs to be fixed.
         if time_format.endswith('z') and time_str[-3] == ':':
             time_str = ''.join(time_str.rsplit(':', 1))
-
         timestamp = datetime.datetime.strptime(time_str,
                                                time_format).timestamp()
     except ValueError:
