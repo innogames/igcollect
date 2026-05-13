@@ -1,14 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """igcollect - FreeBSD Memory Usage
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright © 2025 InnoGames GmbH
 """
 
-from __future__ import print_function
+import sysctl
 from argparse import ArgumentParser
 from time import time
-import sysctl
-
 
 # Translate sysctl to human-readable names in Grafana
 MEMORY_TYPES = {
@@ -30,7 +28,7 @@ def parse_args():
 
 
 def parse_memory_info():
-    memory_info={}
+    memory_info = {}
 
     pagesize = sysctl.filter('vm.stats.vm.v_page_size')[0].value
 
@@ -60,6 +58,7 @@ def main():
     template = args.prefix + '.{} {} ' + str(int(time()))
     for memory_name, memory_value in parse_memory_info().items():
         print(template.format(memory_name, memory_value))
+
 
 if __name__ == '__main__':
     main()
