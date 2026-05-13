@@ -1,16 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """igcollect - FreeBSD Packet Filter
 
-Copyright (c) 2016 InnoGames GmbH
+Copyright © 2026 InnoGames GmbH
 """
-
-from __future__ import print_function
-from argparse import ArgumentParser
-from subprocess import check_output
-from time import time
 
 import re
 import sysctl
+from argparse import ArgumentParser
+from subprocess import check_output
+from time import time
 
 # pfctl displays stats in a tree-like structure.
 # There is no single like that could denote given counter.
@@ -26,30 +24,49 @@ import sysctl
 # Because of that we must split the output into sections and sub-sections.
 
 PF_INFOS = {
-    'states': ('State Table', 'current entries'),
-    'state_insert': ('State Table', 'inserts'),
-    'state_search': ('State Table', 'searches'),
-    'state_removal': ('State Table', 'removals'),
-    'src_nodes': ('Source Tracking Table', 'current entries'),
-    'src_node_insert': ('Source Tracking Table', 'inserts'),
-    'src_node_search': ('Source Tracking Table', 'searches'),
-    'src_node_removal': ('Source Tracking Table', 'removals'),
-    'drop_state_mismatch': ('Counters', 'state-mismatch'),
-    'drop_map_failed': ('Counters', 'map-failed'),
-    'drop_proto_checksum': ('Counters', 'proto-cksum'),
+    'drop_bad_offset': ('Counters', 'bad-offset'),
+    'drop_bad_timestamp': ('Counters', 'bad-timestamp'),
+    'drop_congestion': ('Counters', 'congestion'),
     'drop_fragment': ('Counters', 'fragment'),
-    'drop_short': ('Counters', 'short'),
+    'drop_ip_option': ('Counters', 'ip-option'),
+    'drop_map_failed': ('Counters', 'map-failed'),
+    'drop_memory': ('Counters', 'memory'),
     'drop_normalize': ('Counters', 'normalize'),
-    'drop_state_limit': ('Counters', 'state-limit'),
+    'drop_proto_checksum': ('Counters', 'proto-cksum'),
+    'drop_short': ('Counters', 'short'),
+    'drop_src_limit': ('Counters', 'src-limit'),
     'drop_state_insert': ('Counters', 'state-insert'),
+    'drop_state_limit': ('Counters', 'state-limit'),
+    'drop_state_mismatch': ('Counters', 'state-mismatch'),
+    'drop_synproxy': ('Counters', 'synproxy'),
+    'drop_translate': ('Counters', 'translate'),
+    'src_node_insert': ('Source Tracking Table', 'inserts'),
+    'src_node_removal': ('Source Tracking Table', 'removals'),
+    'src_node_search': ('Source Tracking Table', 'searches'),
+    'src_nodes': ('Source Tracking Table', 'current entries'),
+    'state_insert': ('State Table', 'inserts'),
+    'state_removal': ('State Table', 'removals'),
+    'state_search': ('State Table', 'searches'),
+    'states': ('State Table', 'current entries'),
 }
 
 UMA_INFOS = (
+    'pf_Ethernet_anchors',
+    'pf_UDP_mappings',
+    'pf_anchors',
     'pf_frag_entries',
+    'pf_fragment_node',
     'pf_frags',
+    'pf_mtags',
+    'pf_source_nodes',
+    'pf_state_keys',
+    'pf_state_scrubs',
+    'pf_states',
     'pf_table_entries',
     'pf_table_entry_counters',
+    'pf_tags',
 )
+
 
 def parse_args():
     parser = ArgumentParser()
@@ -77,12 +94,16 @@ def parse_pf_info():
                 break
     return pf_info
 
+
 def parse_pf_memory_info():
-    pf_info={}
+    pf_info = {}
     for uma_info in UMA_INFOS:
-        value = sysctl.filter(f'vm.uma.{uma_info}.stats.current')[0].value
-        pf_info[uma_info] = value
+        ctl = sysctl.filter(f'vm.uma.{uma_info}.stats.current')
+        if ctl:
+            value = sysctl.filter(f'vm.uma.{uma_info}.stats.current')[0].value
+            pf_info[uma_info] = value
     return pf_info
+
 
 def main():
     args = parse_args()
@@ -90,8 +111,8 @@ def main():
     template = args.prefix + '.{} {} ' + str(int(time()))
 
     for graphite_var, pf_val in (
-        parse_pf_info().items() |
-        parse_pf_memory_info().items()
+            parse_pf_info().items() |
+            parse_pf_memory_info().items()
     ):
         print(template.format(graphite_var, pf_val))
 
