@@ -26,8 +26,7 @@ def parse_args():
 def main():
     args = parse_args()
     now = str(int(time.time()))
-    anchors = get_anchors()
-    labels = get_pf_labels(anchors)
+    labels = get_pf_labels()
     label_counters = parse_pf_labels(labels)
 
     for label in label_counters.keys():
@@ -97,29 +96,13 @@ def parse_pf_labels(labels):
     return label_counters
 
 
-def get_pf_labels(anchors):
-    lines = []
-    for anchor in anchors:
-        pfctl_result = check_output(
-            ["/sbin/pfctl", "-q", "-sl", "-a", anchor],
-            universal_newlines=True,
-            close_fds=False,
-        )
-        lines += pfctl_result.splitlines()
-
-    return lines
-
-
-def get_anchors():
+def get_pf_labels():
     pfctl_result = check_output(
-        ["/sbin/pfctl", "-q", "-sA"],
+        ["/sbin/pfctl", "-q", "-sl", "-a", "*"],
         universal_newlines=True,
         close_fds=False,
     )
-
-    anchors = [line.strip() for line in pfctl_result.splitlines()]
-
-    return anchors
+    return pfctl_result.splitlines()
 
 
 if __name__ == "__main__":
