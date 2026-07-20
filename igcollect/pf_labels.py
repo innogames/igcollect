@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 """igcollect - FreeBSD Packet Filter
 
-Copyright (c) 2018 InnoGames GmbH
+Copyright © 2026 InnoGames GmbH
 """
 
-from __future__ import print_function
-from argparse import ArgumentParser
-from socket import gethostname
-from subprocess import check_output
 import json
 import re
 import time
 
-POOL_RE = re.compile("(pool_[0-9]+)_(IP|ip)v([46]).*")
+from argparse import ArgumentParser
+from socket import gethostname
+from subprocess import check_output
+
+POOL_RE = re.compile("^(pool_[0-9]+)_(IP|ip)v([46]).*")
 
 
 def parse_args():
@@ -26,8 +26,7 @@ def parse_args():
 def main():
     args = parse_args()
     now = str(int(time.time()))
-    anchors = get_anchors()
-    labels = get_pf_labels(anchors)
+    labels = get_pf_labels()
     label_counters = parse_pf_labels(labels)
 
     for label in label_counters.keys():
@@ -60,12 +59,17 @@ def parse_pf_labels(labels):
 
     # Read all lines
     for line in labels:
-        # Split each line by  ' ', this gives is the label name and values
+        # example line:
+        # pool_1435231_ipv6:tcp:8081 pool_1435231 45 602 210836 302 125936 300 84900 19
+
         line_tab = line.split(" ")
 
-        # Cut unnecessary things out of label
-        label = line_tab[0].split(":")[0]
-        label_re = POOL_RE.match(label)
+        label_re = None
+        for label in line_tab:
+            # Find the per-address family label
+            label_re = POOL_RE.match(label)
+            if label_re:
+                break
 
         if label_re:
             label = label_re.group(1)
@@ -90,36 +94,25 @@ def parse_pf_labels(labels):
                     },
                 }
 
-            label_counters[label][proto]["pktsIn"] += int(line_tab[4])
-            label_counters[label][proto]["bytesIn"] += int(line_tab[5])
-            label_counters[label][proto]["pktsOut"] += int(line_tab[6])
-            label_counters[label][proto]["bytesOut"] += int(line_tab[7])
+            # ignore rule evaluations at [-8]
+            # ignore total packets at [-7]
+            # ignore total bytes at [-6]
+            label_counters[label][proto]["pktsIn"] += int(line_tab[-5])
+            label_counters[label][proto]["bytesIn"] += int(line_tab[-4])
+            label_counters[label][proto]["pktsOut"] += int(line_tab[-3])
+            label_counters[label][proto]["bytesOut"] += int(line_tab[-2])
+            # ignore states at [-1]
+
     return label_counters
 
 
-def get_pf_labels(anchors):
-    lines = []
-    for anchor in anchors:
-        pfctl_result = check_output(
-            ["/sbin/pfctl", "-q", "-sl", "-a", anchor],
-            universal_newlines=True,
-            close_fds=False,
-        )
-        lines += pfctl_result.splitlines()
-
-    return lines
-
-
-def get_anchors():
+def get_pf_labels():
     pfctl_result = check_output(
-        ["/sbin/pfctl", "-q", "-sA"],
+        ["/sbin/pfctl", "-q", "-sl", "-a", "*"],
         universal_newlines=True,
         close_fds=False,
     )
-
-    anchors = [line.strip() for line in pfctl_result.splitlines()]
-
-    return anchors
+    return pfctl_result.splitlines()
 
 
 if __name__ == "__main__":
