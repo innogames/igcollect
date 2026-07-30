@@ -2,23 +2,28 @@
 """
 
 
+import asyncio
+import atexit
+
 from pysnmp import proto
-from pysnmp.entity.rfc3413.oneliner import cmdgen
-from pysnmp.entity.rfc3413.oneliner.cmdgen import (
+from pysnmp.hlapi.v3arch.asyncio import (
     CommunityData,
+    ContextData,
+    ObjectIdentity,
+    ObjectType,
+    SnmpEngine,
+    UdpTransportTarget,
     UsmUserData,
-    usmHMACSHAAuthProtocol,
+    bulk_walk_cmd,
+    get_cmd,
     usmAesCfb128Protocol,
     usmDESPrivProtocol,
+    usmHMACSHAAuthProtocol,
 )
 
 
 class IgCollectSNMPException(Exception):
     pass
-
-
-# Predefine some variables, it makes this program run a bit faster.
-cmd_gen = cmdgen.CommandGenerator()
 
 
 def get_snmp_connection(args):
@@ -34,10 +39,12 @@ def get_snmp_connection(args):
     else:
         if args.priv_proto == 'des':
             priv_proto = usmDESPrivProtocol
-        if args.priv_proto == 'aes':
+        elif args.priv_proto == 'aes':
             priv_proto = usmAesCfb128Protocol
         else:
-            raise IgCollectSNMPException(f'Unsupported privacy protocol {args.priv_prot}')
+            raise IgCollectSNMPException(
+                f'Unsupported privacy protocol {args.priv_proto}'
+            )
 
         auth_data = UsmUserData(
             args.user, args.auth, args.priv,
@@ -45,26 +52,54 @@ def get_snmp_connection(args):
             privProtocol=priv_proto,
         )
 
-    transport_target = cmdgen.UdpTransportTarget((args.host, 161))
+    # pysnmp 7 is asyncio-only and its SnmpEngine dispatcher binds to a single
+    # event loop, so we keep one loop, engine and transport for the whole run
+    # and drive every query on it via run_until_complete().  A fresh
+    # asyncio.run() per query would close the loop the engine is bound to and
+    # the next query would hang.
+    loop = asyncio.new_event_loop()
+    engine = SnmpEngine()
+    transport = loop.run_until_complete(
+        UdpTransportTarget.create((args.host, 161))
+    )
+
+    def close():
+        # Cancel the engine's pending handle_timeout() looping-call and let the
+        # loop process the cancellation, otherwise the interpreter exits with
+        # "Task was destroyed but it is pending!".
+        engine.close_dispatcher()
+        loop.run_until_complete(asyncio.sleep(0))
+        loop.close()
+
+    atexit.register(close)
 
     return {
+        'loop': loop,
+        'engine': engine,
         'auth_data': auth_data,
-        'transport_target': transport_target,
+        'context': ContextData(),
+        'transport': transport,
     }
 
 
 def get_snmp_value(snmp, OID):
     """ Get a single value from SNMP """
 
-    errorIndication, errorStatus, errorIndex, varBinds = cmd_gen.getCmd(
-        snmp['auth_data'],
-        snmp['transport_target'],
-        OID,
-    )
+    async def run():
+        return await get_cmd(
+            snmp['engine'],
+            snmp['auth_data'],
+            snmp['transport'],
+            snmp['context'],
+            ObjectType(ObjectIdentity(OID)),
+        )
+
+    errorIndication, errorStatus, errorIndex, varBinds = \
+        snmp['loop'].run_until_complete(run())
     if errorIndication:
         raise IgCollectSNMPException(f'Unable to get SNMP value: {errorIndication}')
 
-    return convert_snmp_type(varBinds)
+    return convert_snmp_type(varBinds[0])
 
 
 def get_snmp_table(snmp, OID):
@@ -73,36 +108,39 @@ def get_snmp_table(snmp, OID):
         Returned is a dictionary mapping the last number of OID (converted to
         Python integer) to value (converted to int or str).
     """
-    ret = {}
-    errorIndication, errorStatus, errorIndex, varBindTable = cmd_gen.bulkCmd(
-        snmp['auth_data'],
-        snmp['transport_target'],
-        0,  # nonRepeaters
-        25,
-        OID,
-    )
-    for varBind in varBindTable:
-        # Oh the joy of pysnmp library!
-        # When the nonrepeaters value above is 0, we might get objects from
-        # another snmp tree on some hardware, for example from cisco routers.
-        # we can set it to 1 but then we have high cpu usage. So keep it 0
-        # and manually check if we are still in the same tree.
-        # OIDs we query for must not start with a dot.
-        if not str(varBind[0][0]).startswith(OID):
-            break
-        if errorIndication:
-            raise IgCollectSNMPException(f'Unable to get SNMP value: {errorIndication}')
 
-        index = int(str(varBind[0][0][-1:]))
-        ret[index] = convert_snmp_type(varBind)
+    async def run():
+        ret = {}
+        # lexicographicMode=False stops the walk at the end of the requested
+        # subtree, so we don't leak into another tree (which used to require a
+        # manual OID-prefix check with the old oneliner bulkCmd).
+        objects = bulk_walk_cmd(
+            snmp['engine'],
+            snmp['auth_data'],
+            snmp['transport'],
+            snmp['context'],
+            0,  # nonRepeaters
+            25,  # maxRepetitions
+            ObjectType(ObjectIdentity(OID)),
+            lexicographicMode=False,
+        )
+        async for errorIndication, errorStatus, errorIndex, varBinds in objects:
+            if errorIndication:
+                raise IgCollectSNMPException(
+                    f'Unable to get SNMP value: {errorIndication}'
+                )
+            for var_bind in varBinds:
+                index = int(var_bind[0][-1])
+                ret[index] = convert_snmp_type(var_bind)
+        return ret
 
-    return ret
+    return snmp['loop'].run_until_complete(run())
 
 
-def convert_snmp_type(varBinds):
+def convert_snmp_type(var_bind):
     """ Convert SNMP data types to something more convenient: int or str """
 
-    val = varBinds[0][1]
+    val = var_bind[1]
     if type(val) in [
         proto.rfc1902.Integer,
         proto.rfc1902.Counter32,

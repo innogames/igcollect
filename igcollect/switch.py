@@ -288,12 +288,12 @@ def cpu_stats(prefix, snmp, model):
     if model == 'powerconnect':
         # SNMP returns such ugly string
         #     5 Secs ( 18.74%)    60 Secs ( 17.84%)   300 Secs ( 18.12%)
-        m = re.search('60 Secs \( *([0-9]+)[0-9\.]*%\)', cpu_usage)
+        m = re.search(r'60 Secs \( *([0-9]+)[0-9\.]*%\)', cpu_usage)
         cpu_usage = int(m.group(1))
     if model == 'edgeswitch':
         # SNMP returns such ugly string
         #    5 Sec (  0.00%)    60 Sec (  0.12%)   300 Sec (  0.13%)
-        m = re.search('60 Sec \( *([0-9]+)\.[0-9]+%\)', cpu_usage)
+        m = re.search(r'60 Sec \( *([0-9]+)\.[0-9]+%\)', cpu_usage)
         cpu_usage = int(m.group(1))
     elif model == 'cumulus':
         # The value is percent idle
