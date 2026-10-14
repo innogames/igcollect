@@ -170,7 +170,7 @@ def get_switch_model(snmp):
         return 'cisco_ios'
     elif 'Brocade NetIron MLX' in model:
         return 'netiron_mlx'
-    elif 'Cumulus-Linux' in model:
+    elif 'Cumulus' in model:
         return 'cumulus'
     elif 'EdgeSwitch' in model:
         return 'edgeswitch'
