@@ -6,12 +6,14 @@ import asyncio
 import atexit
 
 from pysnmp import proto
+from pysnmp.error import PySnmpError
 from pysnmp.hlapi.v3arch.asyncio import (
     CommunityData,
     ContextData,
     ObjectIdentity,
     ObjectType,
     SnmpEngine,
+    Udp6TransportTarget,
     UdpTransportTarget,
     UsmUserData,
     bulk_walk_cmd,
@@ -59,9 +61,15 @@ def get_snmp_connection(args):
     # the next query would hang.
     loop = asyncio.new_event_loop()
     engine = SnmpEngine()
-    transport = loop.run_until_complete(
-        UdpTransportTarget.create((args.host, 161))
-    )
+    try:
+        transport = loop.run_until_complete(
+            Udp6TransportTarget.create((args.host, 161))
+        )
+    except PySnmpError:
+        # IPv4 address or hostname without an AAAA record
+        transport = loop.run_until_complete(
+            UdpTransportTarget.create((args.host, 161))
+        )
 
     def close():
         # Cancel the engine's pending handle_timeout() looping-call and let the
