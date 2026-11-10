@@ -4,6 +4,12 @@
 
 import asyncio
 import atexit
+import sys
+
+# Hide the optional pysmi MIB compiler from pysnmp.  When it is installed,
+# pysnmp builds its lark grammar on every first OID resolution, costing
+# ~0.3-0.8s CPU per run, and we only ever query numeric OIDs.
+sys.modules.setdefault('pysmi', None)
 
 from pysnmp import proto
 from pysnmp.error import PySnmpError
